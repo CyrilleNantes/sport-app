@@ -7,6 +7,7 @@
   <title>{% block title %}Sport app{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'workouts/styles.css' %}">
 </head>
+
 <body>
   <header class="topbar">
     <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
@@ -25,6 +26,7 @@
         {% endfor %}
       </div>
     {% endif %}
+
     {% block content %}{% endblock %}
   </main>
 
