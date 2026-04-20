@@ -1,0 +1,57 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">MVP musculation</p>
+    <h1>Planifier, saisir, progresser.</h1>
+  </div>
+  <a class="button primary" href="{% url 'workouts:planifier_seance' %}">Planifier une seance</a>
+</section>
+
+<section class="grid two">
+  <div>
+    <h2>En cours</h2>
+    <div class="stack">
+      {% for seance in seances_actives %}
+        <a class="session-row active" href="{% url 'workouts:seance_detail' seance.pk %}">
+          <span>{{ seance }}</span>
+          <strong>{{ seance.get_statut_display }}</strong>
+        </a>
+      {% empty %}
+        <p class="muted">Aucune seance en cours.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <h2>Planifiees</h2>
+    <div class="stack">
+      {% for seance in prochaines %}
+        <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
+          <span>{{ seance }}</span>
+          <strong>{{ seance.date|date:"d/m" }}</strong>
+        </a>
+      {% empty %}
+        <p class="muted">Aucune seance planifiee.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Dernieres seances</h2>
+  <div class="stack">
+    {% for seance in recentes %}
+      <a class="session-row completed" href="{% url 'workouts:seance_detail' seance.pk %}">
+        <span>{{ seance }}</span>
+        <strong>{{ seance.duration|default:"-" }}</strong>
+      </a>
+    {% empty %}
+      <p class="muted">Pas encore d'historique.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

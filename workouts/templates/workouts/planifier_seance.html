@@ -1,0 +1,14 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Planifier une seance{% endblock %}
+
+{% block content %}
+<section class="panel narrow">
+  <h1>Planifier une seance</h1>
+  <form method="post" class="form stack">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="button primary" type="submit">Creer la seance</button>
+  </form>
+</section>
+{% endblock %}
