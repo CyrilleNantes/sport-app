@@ -5,12 +5,18 @@ from django.utils import timezone
 
 
 class CategorieExercice(models.TextChoices):
-    PUSH = "PUSH", "Push"
-    PULL = "PULL", "Pull"
-    LEGS = "LEGS", "Jambes"
-    CORE = "CORE", "Gainage"
-    FULL_BODY = "FULL_BODY", "Full body"
+    ADDUCTEURS = "ADDUCTEURS", "Adducteurs"
+    ABDOS = "ABDOS", "Abdos"
+    CARDIO = "CARDIO", "Cardio"
+    DOS = "DOS", "Dos"
+    EPAULE_ARRIERE = "EPAULE_ARRIERE", "Epaule arriere"
+    FESSIERS = "FESSIERS", "Fessiers"
+    GAINAGE = "GAINAGE", "Gainage"
+    ISCHIOS = "ISCHIOS", "Ischios"
+    PECTORAUX = "PECTORAUX", "Pectoraux"
+    QUADRICEPS = "QUADRICEPS", "Quadriceps"
     OTHER = "OTHER", "Autre"
+
 
 
 class StatutSeance(models.TextChoices):

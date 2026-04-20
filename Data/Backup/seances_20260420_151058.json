@@ -1,0 +1,200 @@
+[
+  {
+    "id": 40,
+    "seance_type_id": 11,
+    "date": "2026-04-19",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 39,
+    "seance_type_id": 10,
+    "date": "2026-04-16",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 38,
+    "seance_type_id": 9,
+    "date": "2026-04-14",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 37,
+    "seance_type_id": 11,
+    "date": "2026-04-12",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 36,
+    "seance_type_id": 10,
+    "date": "2026-04-09",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 35,
+    "seance_type_id": 9,
+    "date": "2026-04-07",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 34,
+    "seance_type_id": 11,
+    "date": "2026-04-03",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 33,
+    "seance_type_id": 10,
+    "date": "2026-04-02",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 32,
+    "seance_type_id": 9,
+    "date": "2026-03-31",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 31,
+    "seance_type_id": 11,
+    "date": "2026-03-29",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 30,
+    "seance_type_id": 10,
+    "date": "2026-03-26",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 29,
+    "seance_type_id": 9,
+    "date": "2026-03-24",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 28,
+    "seance_type_id": 11,
+    "date": "2026-03-22",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 27,
+    "seance_type_id": 10,
+    "date": "2026-03-19",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 26,
+    "seance_type_id": 9,
+    "date": "2026-03-17",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 25,
+    "seance_type_id": 11,
+    "date": "2026-03-15",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 24,
+    "seance_type_id": 10,
+    "date": "2026-03-12",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 23,
+    "seance_type_id": 9,
+    "date": "2026-03-10",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 22,
+    "seance_type_id": 11,
+    "date": "2026-03-08",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 21,
+    "seance_type_id": 10,
+    "date": "2026-03-06",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 20,
+    "seance_type_id": 9,
+    "date": "2026-03-03",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  },
+  {
+    "id": 19,
+    "seance_type_id": 11,
+    "date": "2026-03-01",
+    "statut": "COMPLETED",
+    "started_at": null,
+    "ended_at": null,
+    "notes": ""
+  }
+]
