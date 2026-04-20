@@ -13,10 +13,10 @@ SECRET_KEY = os.getenv("SECRET_KEY", "fallback-insecure-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # Domaine Railway (à adapter si besoin)
-RAILWAY_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "ton-app.up.railway.app")
+RAILWAY_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "sport-app-production-8be3.up.railway.app")
 
 ALLOWED_HOSTS = [
-    RAILWAY_DOMAIN,
+    "sport-app-production-8be3.up.railway.app",
 ]
 
 # --- Applications ---
@@ -95,7 +95,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # CSRF : autoriser ton domaine
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{RAILWAY_DOMAIN}",
+    f"https://sport-app-production-8be3.up.railway.app",
 ]
 
 # Cookies sécurisés uniquement si pas en debug
