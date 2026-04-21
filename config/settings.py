@@ -4,7 +4,7 @@ import dj_database_url
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-insecure-key")
@@ -13,11 +13,18 @@ SECRET_KEY = os.getenv("SECRET_KEY", "fallback-insecure-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # Domaine Railway (à adapter si besoin)
-RAILWAY_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "sport-app-production-8be3.up.railway.app")
+RAILWAY_DOMAIN = os.getenv(
+    "RAILWAY_PUBLIC_DOMAIN",
+    "sport-app-production-8be3.up.railway.app",
+)
 
 ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
     "sport-app-production-8be3.up.railway.app",
 ]
+if RAILWAY_DOMAIN and RAILWAY_DOMAIN not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
 
 # --- Applications ---
 INSTALLED_APPS = [
@@ -85,19 +92,31 @@ USE_I18N = True
 USE_TZ = True
 
 # --- Static ---
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+WHITENOISE_KEEP_ONLY_HASHED_FILES = False
 
 # =========================================================
 # ✅ CONFIG PROD (Railway / HTTPS / CSRF)
 # =========================================================
 
 # Indique à Django qu'il est derrière un proxy HTTPS (Railway)
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # CSRF : autoriser ton domaine
 CSRF_TRUSTED_ORIGINS = [
-    f"https://sport-app-production-8be3.up.railway.app",
+    f"https://{host}"
+    for host in ALLOWED_HOSTS
+    if host not in {"localhost", "127.0.0.1"}
 ]
 
 # Cookies sécurisés uniquement si pas en debug
@@ -111,4 +130,3 @@ SESSION_COOKIE_HTTPONLY = True
 # Protection basique supplémentaire
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
