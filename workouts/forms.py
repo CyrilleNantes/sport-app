@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Exercice, Seance, SeanceType, SessionLigne
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne
 
 
 class SeancePlanificationForm(forms.Form):
@@ -54,6 +54,33 @@ class SessionLigneQuickForm(forms.ModelForm):
                 attrs={"step": "0.5", "inputmode": "decimal"}
             ),
             "rpe_reel": forms.NumberInput(attrs={"min": 0, "max": 10, "step": "0.5"}),
+        }
+
+
+class MensurationForm(forms.ModelForm):
+    class Meta:
+        model = Mensuration
+        fields = [
+            "date",
+            "poids",
+            "tour_poitrine",
+            "tour_taille",
+            "tour_hanches",
+            "tour_bras",
+            "tour_cuisse",
+            "masse_grasse",
+            "notes",
+        ]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "poids": forms.NumberInput(attrs={"step": "0.1", "inputmode": "decimal"}),
+            "tour_poitrine": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),
+            "tour_taille": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),
+            "tour_hanches": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),
+            "tour_bras": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),
+            "tour_cuisse": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),
+            "masse_grasse": forms.NumberInput(attrs={"step": "0.1", "inputmode": "decimal"}),
+            "notes": forms.Textarea(attrs={"rows": 2}),
         }
 
 

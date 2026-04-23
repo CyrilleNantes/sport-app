@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import logging
+from datetime import date
 from itertools import groupby
 
 from django.contrib import messages
@@ -11,11 +12,12 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     AddSessionLineForm,
+    MensurationForm,
     SeanceNotesForm,
     SeancePlanificationForm,
     SessionLigneQuickForm,
 )
-from .models import Seance, SessionLigne, StatutSeance
+from .models import Mensuration, Seance, SessionLigne, StatutSeance
 from .services import (
     add_unplanned_session_line,
     complete_seance,
@@ -315,3 +317,71 @@ def export_csv(request: HttpRequest) -> HttpResponse:
 
     logger.info("Export CSV : %s lignes exportées", row_count)
     return response
+
+
+# ── Mensurations ───────────────────────────────────────────────────────────────
+
+# Champs mesurés — ordre d'affichage
+_MENSURATION_CHAMPS: list[tuple[str, str, str]] = [
+    ("poids",         "Poids",    "kg"),
+    ("tour_poitrine", "Poitrine", "cm"),
+    ("tour_taille",   "Taille",   "cm"),
+    ("tour_hanches",  "Hanches",  "cm"),
+    ("tour_bras",     "Bras",     "cm"),
+    ("tour_cuisse",   "Cuisse",   "cm"),
+    ("masse_grasse",  "MG",       "%"),
+]
+
+
+def _build_mensuration_rows(entries: list[Mensuration]) -> list[dict]:
+    """Associe chaque entrée à ses deltas par rapport à la précédente."""
+    rows = []
+    for i, entry in enumerate(entries):
+        prev = entries[i + 1] if i + 1 < len(entries) else None
+        cells = []
+        for field, label, unit in _MENSURATION_CHAMPS:
+            value = getattr(entry, field)
+            prev_value = getattr(prev, field) if prev else None
+            delta = (value - prev_value) if (value is not None and prev_value is not None) else None
+            cells.append({"field": field, "label": label, "unit": unit, "value": value, "delta": delta})
+        rows.append({"entry": entry, "cells": cells})
+    return rows
+
+
+def mensurations(request: HttpRequest) -> HttpResponse:
+    entries = list(Mensuration.objects.all())
+    return render(request, "workouts/mensurations.html", {
+        "rows": _build_mensuration_rows(entries),
+        "champs": _MENSURATION_CHAMPS,
+    })
+
+
+def ajouter_mensuration(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = MensurationForm(request.POST)
+        if form.is_valid():
+            m = form.save()
+            logger.info("Mensuration ajoutée : pk=%s date=%s", m.pk, m.date)
+            messages.success(request, "Mensurations enregistrées.")
+            return redirect("workouts:mensurations")
+    else:
+        form = MensurationForm(initial={"date": date.today()})
+    return render(request, "workouts/mensuration_form.html", {"form": form, "titre": "Nouvelle saisie"})
+
+
+def modifier_mensuration(request: HttpRequest, pk: int) -> HttpResponse:
+    mensuration = get_object_or_404(Mensuration, pk=pk)
+    if request.method == "POST":
+        form = MensurationForm(request.POST, instance=mensuration)
+        if form.is_valid():
+            form.save()
+            logger.info("Mensuration modifiée : pk=%s date=%s", mensuration.pk, mensuration.date)
+            messages.success(request, "Mensurations modifiées.")
+            return redirect("workouts:mensurations")
+    else:
+        form = MensurationForm(instance=mensuration)
+    return render(request, "workouts/mensuration_form.html", {
+        "form": form,
+        "titre": "Modifier",
+        "mensuration": mensuration,
+    })

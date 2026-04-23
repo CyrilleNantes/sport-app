@@ -1,0 +1,57 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Mensurations{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Suivi corps</p>
+    <h1>Mensurations</h1>
+  </div>
+  <div class="actions">
+    <a class="button primary" href="{% url 'workouts:ajouter_mensuration' %}">Nouvelle saisie</a>
+  </div>
+</section>
+
+{% if rows %}
+  <section class="mensuration-list">
+    {% for row in rows %}
+      <div class="mensuration-card panel">
+        <div class="mensuration-card-header">
+          <strong>{{ row.entry.date|date:"d/m/Y" }}</strong>
+          <a class="button compact" href="{% url 'workouts:modifier_mensuration' row.entry.pk %}">Modifier</a>
+        </div>
+
+        <div class="mensuration-grid">
+          {% for cell in row.cells %}
+            {% if cell.value is not None %}
+              <div class="mensuration-cell">
+                <span class="mensuration-label">{{ cell.label }}</span>
+                <span class="mensuration-value">
+                  {{ cell.value }} {{ cell.unit }}
+                  {% if cell.delta is not None %}
+                    {% if cell.delta > 0 %}
+                      <span class="delta positive">+{{ cell.delta }}</span>
+                    {% elif cell.delta < 0 %}
+                      <span class="delta negative">{{ cell.delta }}</span>
+                    {% endif %}
+                  {% endif %}
+                </span>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        {% if row.entry.notes %}
+          <p class="mensuration-notes muted">{{ row.entry.notes }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+
+{% else %}
+  <div class="panel">
+    <p class="muted">Aucune mensuration enregistrée. <a href="{% url 'workouts:ajouter_mensuration' %}">Faire une première saisie →</a></p>
+  </div>
+{% endif %}
+{% endblock %}

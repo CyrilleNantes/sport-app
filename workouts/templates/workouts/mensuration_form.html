@@ -1,0 +1,64 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}{{ titre }} — Mensurations{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Mensurations</p>
+    <h1>{{ titre }}</h1>
+  </div>
+</section>
+
+<div class="panel narrow">
+  <form method="post" class="form stack">
+    {% csrf_token %}
+
+    <div class="form-field">
+      <label for="{{ form.date.id_for_label }}">Date *</label>
+      {{ form.date }}
+    </div>
+
+    <div class="mensuration-form-grid">
+      <div class="form-field">
+        <label for="{{ form.poids.id_for_label }}">{{ form.poids.label }}</label>
+        {{ form.poids }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.masse_grasse.id_for_label }}">{{ form.masse_grasse.label }}</label>
+        {{ form.masse_grasse }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_poitrine.id_for_label }}">{{ form.tour_poitrine.label }}</label>
+        {{ form.tour_poitrine }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_taille.id_for_label }}">{{ form.tour_taille.label }}</label>
+        {{ form.tour_taille }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_hanches.id_for_label }}">{{ form.tour_hanches.label }}</label>
+        {{ form.tour_hanches }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_bras.id_for_label }}">{{ form.tour_bras.label }}</label>
+        {{ form.tour_bras }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_cuisse.id_for_label }}">{{ form.tour_cuisse.label }}</label>
+        {{ form.tour_cuisse }}
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+      {{ form.notes }}
+    </div>
+
+    <div class="actions">
+      <button class="button primary" type="submit">Enregistrer</button>
+      <a class="button" href="{% url 'workouts:mensurations' %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -286,3 +286,38 @@ class SessionLigne(models.Model):
         self.validee = True
         if not self.completed_at:
             self.completed_at = timezone.now()
+
+
+class Mensuration(models.Model):
+    date = models.DateField()
+    poids = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Poids (kg)"
+    )
+    tour_poitrine = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Tour de poitrine (cm)"
+    )
+    tour_taille = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Tour de taille (cm)"
+    )
+    tour_hanches = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Tour de hanches (cm)"
+    )
+    tour_bras = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Tour de bras (cm)"
+    )
+    tour_cuisse = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Tour de cuisse (cm)"
+    )
+    masse_grasse = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="% masse grasse"
+    )
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "mensuration"
+        verbose_name_plural = "mensurations"
+
+    def __str__(self):
+        return f"Mensurations du {self.date:%d/%m/%Y}"
