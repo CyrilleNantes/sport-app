@@ -1,0 +1,14 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Page introuvable — Sport app{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <p class="eyebrow">Erreur 404</p>
+  <h1>Page introuvable</h1>
+  <p class="muted">
+    L'adresse <strong>{{ request_path }}</strong> n'existe pas ou a été déplacée.
+  </p>
+  <a class="button primary" href="/">Retour à l'accueil</a>
+</section>
+{% endblock %}
