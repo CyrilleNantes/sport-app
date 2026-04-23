@@ -28,17 +28,19 @@
   </div>
 </section>
 
-<section class="rest-timer" id="rest-timer" hidden>
-  <div>
-    <p class="eyebrow">Chrono repos</p>
-    <strong id="rest-timer-label">Pret</strong>
-  </div>
-  <div class="rest-timer-value" id="rest-timer-value">00:00</div>
-</section>
+<template id="rest-timer-template">
+  <section class="rest-timer" data-rest-timer>
+    <div>
+      <p class="eyebrow">Chrono repos</p>
+      <strong data-rest-timer-label>Pret</strong>
+    </div>
+    <div class="rest-timer-value" data-rest-timer-value>00:00</div>
+  </section>
+</template>
 
-<section class="workout">
+<section class="workout" id="workout-list">
   {% for groupe in groupes %}
-    <div class="exercise-block">
+    <div class="exercise-block" data-exercise-block>
       <div class="exercise-title">
         <form
           method="post"
@@ -68,7 +70,7 @@
       <div class="series-list">
         {% for ligne in groupe.lignes %}
           {% with form=forms_by_line|get_item:ligne.pk %}
-          <form method="post" action="{% url 'workouts:update_ligne' ligne.pk %}" class="series-row {% if ligne.is_completed %}done{% endif %}" data-line-form data-rest-seconds="{{ ligne.repos_secondes|default:0 }}">
+          <form method="post" action="{% url 'workouts:update_ligne' ligne.pk %}" class="series-row {% if ligne.is_completed %}done{% endif %}" data-line-form>
             {% csrf_token %}
             <div class="series-meta">
               <strong>S{{ ligne.numero_serie }}</strong>
@@ -126,10 +128,10 @@
 
 {% block scripts %}
 <script>
-const timerPanel = document.getElementById("rest-timer");
-const timerLabel = document.getElementById("rest-timer-label");
-const timerValue = document.getElementById("rest-timer-value");
+const timerTemplate = document.getElementById("rest-timer-template");
+const workoutList = document.getElementById("workout-list");
 let restTimerId = null;
+let activeTimerPanel = null;
 
 function formatDuration(totalSeconds) {
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
@@ -137,19 +139,44 @@ function formatDuration(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
-function startRestTimer(seconds, label) {
-  if (!seconds) {
-    timerPanel.hidden = true;
-    return;
+function isExerciseComplete(exerciseBlock) {
+  return Array.from(exerciseBlock.querySelectorAll("[data-line-form]")).every((row) =>
+    row.classList.contains("done")
+  );
+}
+
+function moveExerciseToBottomWhenComplete(exerciseBlock) {
+  if (workoutList && exerciseBlock && isExerciseComplete(exerciseBlock)) {
+    workoutList.appendChild(exerciseBlock);
   }
+}
+
+function startRestTimer(seconds, label, exerciseBlock) {
   if (restTimerId) {
     window.clearInterval(restTimerId);
   }
+  if (activeTimerPanel) {
+    activeTimerPanel.remove();
+  }
+  if (!exerciseBlock) {
+    return;
+  }
+  if (!seconds) {
+    moveExerciseToBottomWhenComplete(exerciseBlock);
+    return;
+  }
+
+  const timerPanel = timerTemplate.content.firstElementChild.cloneNode(true);
+  const timerLabel = timerPanel.querySelector("[data-rest-timer-label]");
+  const timerValue = timerPanel.querySelector("[data-rest-timer-value]");
+  const seriesList = exerciseBlock.querySelector(".series-list");
   let remaining = seconds;
-  timerPanel.hidden = false;
+  activeTimerPanel = timerPanel;
   timerPanel.classList.remove("finished");
   timerLabel.textContent = label;
   timerValue.textContent = formatDuration(remaining);
+  exerciseBlock.insertBefore(timerPanel, seriesList);
+  timerPanel.scrollIntoView({behavior: "smooth", block: "center"});
 
   restTimerId = window.setInterval(() => {
     remaining -= 1;
@@ -159,6 +186,7 @@ function startRestTimer(seconds, label) {
       timerValue.textContent = "00:00";
       timerLabel.textContent = `${label} - repos termine`;
       timerPanel.classList.add("finished");
+      moveExerciseToBottomWhenComplete(exerciseBlock);
       return;
     }
     timerValue.textContent = formatDuration(remaining);
@@ -181,6 +209,7 @@ document.querySelectorAll("[data-line-form]").forEach((form) => {
       if (!response.ok) throw new Error("save failed");
       const data = await response.json();
       if (data.ok) {
+        const exerciseBlock = form.closest("[data-exercise-block]");
         form.classList.add("done");
         status.textContent = `Validee ${data.completed_at}`;
         inputs.forEach((input) => {
@@ -189,7 +218,7 @@ document.querySelectorAll("[data-line-form]").forEach((form) => {
         });
         button.textContent = "Validee";
         const label = `${data.exercise_name} ${data.serie_label}`;
-        startRestTimer(data.rest_seconds, label);
+        startRestTimer(data.rest_seconds, label, exerciseBlock);
       }
     } catch (error) {
       status.textContent = "Erreur";

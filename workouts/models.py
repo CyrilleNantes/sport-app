@@ -18,7 +18,6 @@ class CategorieExercice(models.TextChoices):
     OTHER = "OTHER", "Autre"
 
 
-
 class StatutSeance(models.TextChoices):
     PLANNED = "PLANIFIEE", "Planifiee"
     IN_PROGRESS = "IN_PROGRESS", "En cours"
@@ -239,6 +238,14 @@ class SessionLigne(models.Model):
 
     def __str__(self):
         return f"{self.seance} - {self.exercice} S{self.numero_serie}"
+
+    def save(self, *args, **kwargs):
+        if self.ordre_reel is None and self.ordre_prevu:
+            self.ordre_reel = self.ordre_prevu
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"ordre_reel"}
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()

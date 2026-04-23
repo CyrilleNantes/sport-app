@@ -18,6 +18,7 @@ def copy_template_lines_to_seance(seance):
         SessionLigne(
             seance=seance,
             ordre_prevu=ligne.ordre_exercice,
+            ordre_reel=ligne.ordre_exercice,
             exercice=ligne.exercice,
             numero_serie=ligne.numero_serie,
             repetitions_cible=ligne.repetitions_cible,
@@ -96,6 +97,7 @@ def add_unplanned_session_line(
     return SessionLigne.objects.create(
         seance=seance,
         ordre_prevu=next_order,
+        ordre_reel=next_order,
         exercice=exercice,
         numero_serie=next_serie,
         repetitions_cible=repetitions_cible,
@@ -145,9 +147,8 @@ def update_exercise_order(*, seance, ordre_prevu, ordre_reel):
     ordered_groups.insert(target_index, moving_group)
 
     for index, group in enumerate(ordered_groups, start=1):
-        stored_value = None if index == group["ordre_prevu"] else index
         SessionLigne.objects.filter(
             pk__in=[ligne.pk for ligne in group["lignes"]]
-        ).update(ordre_reel=stored_value)
+        ).update(ordre_reel=index)
 
     return len(moving_group["lignes"]), target_index + 1

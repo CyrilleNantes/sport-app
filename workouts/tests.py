@@ -48,6 +48,7 @@ class SeanceTemplateCopyTests(TestCase):
 
         self.assertEqual(len(lignes), 2)
         self.assertEqual(lignes[0].ordre_prevu, 1)
+        self.assertEqual(lignes[0].ordre_reel, 1)
         self.assertEqual(lignes[0].exercice, self.hip_thrust)
         self.assertEqual(lignes[0].numero_serie, 1)
         self.assertEqual(lignes[0].repetitions_cible, 10)
@@ -159,6 +160,38 @@ class SeanceTemplateCopyTests(TestCase):
             [1],
         )
 
+    def test_update_exercise_order_keeps_explicit_real_order_when_back_to_planned(self):
+        seance = create_seance_from_template(
+            seance_type=self.template,
+            date=timezone.localdate(),
+        )
+
+        update_exercise_order(seance=seance, ordre_prevu=2, ordre_reel=1)
+        update_exercise_order(seance=seance, ordre_prevu=2, ordre_reel=2)
+
+        self.assertEqual(
+            list(
+                SessionLigne.objects.filter(seance=seance)
+                .order_by("ordre_prevu")
+                .values_list("ordre_reel", flat=True)
+            ),
+            [1, 2],
+        )
+
+    def test_session_ligne_defaults_real_order_to_planned_order(self):
+        seance = Seance.objects.create(
+            seance_type=self.template, date=timezone.localdate()
+        )
+
+        ligne = SessionLigne.objects.create(
+            seance=seance,
+            ordre_prevu=1,
+            exercice=self.hip_thrust,
+            numero_serie=1,
+        )
+
+        self.assertEqual(ligne.ordre_reel, 1)
+
     def test_add_unplanned_session_line_creates_next_series(self):
         seance = create_seance_from_template(
             seance_type=self.template,
@@ -178,3 +211,4 @@ class SeanceTemplateCopyTests(TestCase):
         self.assertEqual(SessionLigne.objects.filter(seance=seance).count(), 3)
         self.assertEqual(added_line.numero_serie, 2)
         self.assertEqual(added_line.ordre_prevu, 2)
+        self.assertEqual(added_line.ordre_reel, 2)
