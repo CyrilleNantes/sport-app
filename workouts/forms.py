@@ -72,7 +72,7 @@ class MensurationForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "date": forms.DateInput(attrs={"type": "date"}),
+            "date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "poids": forms.NumberInput(attrs={"step": "0.1", "inputmode": "decimal"}),
             "tour_poitrine": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),
             "tour_taille": forms.NumberInput(attrs={"step": "0.5", "inputmode": "decimal"}),

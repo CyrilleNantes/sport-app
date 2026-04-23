@@ -493,6 +493,41 @@ textarea {
   gap: 0.25rem;
 }
 
+/* ── Mensuration form layout ─────────────────────────────── */
+
+.mensuration-form-layout {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.mensuration-guide-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0.5rem;
+}
+
+.body-guide-img {
+  width: 200px;
+  height: auto;
+}
+
+@media (max-width: 720px) {
+  .mensuration-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mensuration-guide-panel {
+    order: -1;
+  }
+
+  .body-guide-img {
+    width: 160px;
+  }
+}
+
 /* ── Pages d'erreur ───────────────────────────────────────── */
 
 .error-page {
