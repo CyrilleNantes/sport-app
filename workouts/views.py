@@ -423,6 +423,64 @@ def export_backup(request: HttpRequest) -> HttpResponse:
     return response
 
 
+def export_sessions_csv(request: HttpRequest) -> HttpResponse:
+    """Export lisible des séances terminées — une ligne par série."""
+    response = HttpResponse(
+        content_type="text/csv; charset=utf-8-sig",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="sessions_{date.today().isoformat()}.csv"'
+    )
+    # utf-8-sig = UTF-8 avec BOM pour que Excel ouvre correctement les accents
+    response.write("\ufeff")
+
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow([
+        "Date",
+        "Type",
+        "Ordre",
+        "Exercice",
+        "Série",
+        "Répétitions cibles",
+        "Charge cible (kg)",
+        "Repos (sec)",
+        "RPE Cible",
+        "Tempo",
+        "Charge réelle (kg)",
+        "Reps réelles",
+        "RPE réel (0-10)",
+    ])
+
+    lignes = (
+        SessionLigne.objects
+        .filter(seance__statut=StatutSeance.COMPLETED)
+        .select_related("seance", "seance__seance_type", "exercice")
+        .order_by("seance__date", "seance_id", "ordre_prevu", "numero_serie")
+    )
+
+    row_count = 0
+    for ligne in lignes:
+        writer.writerow([
+            ligne.seance.date.strftime("%d/%m/%Y"),
+            ligne.seance.seance_type.nom if ligne.seance.seance_type else "",
+            ligne.ordre_prevu,
+            ligne.exercice.nom,
+            f"S{ligne.numero_serie}",
+            ligne.repetitions_cible if ligne.repetitions_cible is not None else "",
+            ligne.charge_cible if ligne.charge_cible is not None else "",
+            ligne.repos_secondes if ligne.repos_secondes is not None else "",
+            ligne.rpe_cible if ligne.rpe_cible is not None else "",
+            ligne.tempo or "",
+            ligne.charge_reelle if ligne.charge_reelle is not None else "",
+            ligne.repetitions_reelles if ligne.repetitions_reelles is not None else "",
+            ligne.rpe_reel if ligne.rpe_reel is not None else "",
+        ])
+        row_count += 1
+
+    logger.info("Export sessions CSV : %s lignes exportées", row_count)
+    return response
+
+
 @require_POST
 def import_backup(request: HttpRequest) -> HttpResponse:
     zip_file = request.FILES.get("backup_file")

@@ -74,6 +74,24 @@
   </div>
 
 </div>
+
+<!-- Export CSV séances -->
+<div class="panel stack">
+  <div>
+    <h2>Export séances (CSV)</h2>
+    <p class="muted" style="margin: 0.5rem 0 0;">
+      Exporte toutes tes séances <strong>terminées</strong> en CSV lisible — une ligne par série,
+      avec les noms des exercices, les charges, répétitions et RPE réels.
+      S'ouvre directement dans Excel ou Google Sheets.
+    </p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{% url 'workouts:export_sessions_csv' %}">
+      ⬇ Télécharger le CSV
+    </a>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}

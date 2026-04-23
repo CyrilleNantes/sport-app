@@ -25,5 +25,6 @@ urlpatterns = [
     path("mensurations/<int:pk>/modifier/", views.modifier_mensuration, name="modifier_mensuration"),
     path("backup/", views.backup_page, name="backup_page"),
     path("backup/export/", views.export_backup, name="export_backup"),
+    path("backup/export-sessions.csv", views.export_sessions_csv, name="export_sessions_csv"),
     path("backup/import/", views.import_backup, name="import_backup"),
 ]
