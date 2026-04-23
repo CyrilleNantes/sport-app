@@ -23,4 +23,7 @@ urlpatterns = [
     path("mensurations/", views.mensurations, name="mensurations"),
     path("mensurations/ajouter/", views.ajouter_mensuration, name="ajouter_mensuration"),
     path("mensurations/<int:pk>/modifier/", views.modifier_mensuration, name="modifier_mensuration"),
+    path("backup/", views.backup_page, name="backup_page"),
+    path("backup/export/", views.export_backup, name="export_backup"),
+    path("backup/import/", views.import_backup, name="import_backup"),
 ]

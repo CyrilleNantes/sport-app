@@ -1,0 +1,94 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Backup — Sport app{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Données</p>
+    <h1>Backup</h1>
+  </div>
+</section>
+
+<div class="grid two">
+
+  <!-- Export -->
+  <div class="panel stack">
+    <div>
+      <h2>Exporter</h2>
+      <p class="muted" style="margin: 0.5rem 0 0;">
+        Télécharge un fichier <code>.zip</code> contenant toutes tes données
+        (exercices, séances, séries, mensurations). À faire avant toute
+        manipulation risquée.
+      </p>
+    </div>
+    <div class="actions">
+      <a class="button primary" href="{% url 'workouts:export_backup' %}">
+        ⬇ Télécharger le backup
+      </a>
+    </div>
+  </div>
+
+  <!-- Import -->
+  <div class="panel stack">
+    <div>
+      <h2>Importer</h2>
+      <p class="muted" style="margin: 0.5rem 0 0;">
+        Restaure un backup précédemment exporté. <strong>Attention&nbsp;: toutes
+        les données actuelles seront effacées</strong> avant l'import.
+      </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'workouts:import_backup' %}"
+          class="stack" id="import-form">
+      {% csrf_token %}
+      <label for="backup_file">
+        Fichier zip
+        <input type="file" id="backup_file" name="backup_file" accept=".zip" required>
+      </label>
+
+      <div class="actions">
+        <button type="button" class="button" style="background:var(--warn-bg); border-color: var(--accent); color: var(--ink);"
+                id="import-btn">
+          ⚠ Restaurer
+        </button>
+      </div>
+    </form>
+
+    <!-- Confirmation dialog -->
+    <dialog id="confirm-dialog" style="border:1px solid var(--line); border-radius:8px; padding:1.5rem; max-width:380px;">
+      <div class="stack">
+        <p style="margin:0; font-weight:700;">Confirmer la restauration ?</p>
+        <p class="muted" style="margin:0;">
+          Cette action est irréversible. Toutes les données actuelles seront
+          supprimées et remplacées par le contenu du fichier.
+        </p>
+        <div class="actions">
+          <button class="button primary" id="confirm-yes" style="background:var(--accent); border-color:var(--accent);">
+            Oui, restaurer
+          </button>
+          <button class="button" id="confirm-no">Annuler</button>
+        </div>
+      </div>
+    </dialog>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const btn    = document.getElementById("import-btn");
+  const dialog = document.getElementById("confirm-dialog");
+  const yes    = document.getElementById("confirm-yes");
+  const no     = document.getElementById("confirm-no");
+  const form   = document.getElementById("import-form");
+
+  btn.addEventListener("click", () => {
+    if (!document.getElementById("backup_file").value) return;
+    dialog.showModal();
+  });
+  yes.addEventListener("click", () => { dialog.close(); form.submit(); });
+  no.addEventListener("click",  () => dialog.close());
+</script>
+{% endblock %}

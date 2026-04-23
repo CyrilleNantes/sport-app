@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import csv
+import io
 import logging
+import zipfile
 from datetime import date
 from itertools import groupby
 
 from django.contrib import messages
+from django.core import serializers as django_serializers
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -17,7 +21,7 @@ from .forms import (
     SeancePlanificationForm,
     SessionLigneQuickForm,
 )
-from .models import Mensuration, Seance, SessionLigne, StatutSeance
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, StatutSeance, TemplateLigne
 from .services import (
     add_unplanned_session_line,
     complete_seance,
@@ -385,3 +389,74 @@ def modifier_mensuration(request: HttpRequest, pk: int) -> HttpResponse:
         "titre": "Modifier",
         "mensuration": mensuration,
     })
+
+
+# ── Backup / Restore ───────────────────────────────────────────────────────────
+
+# Ordre d'export et d'import (respecte les dépendances FK)
+_BACKUP_MODELS: list[tuple[str, type]] = [
+    ("exercices",      Exercice),
+    ("seance_types",   SeanceType),
+    ("mensurations",   Mensuration),
+    ("template_lignes", TemplateLigne),
+    ("seances",        Seance),
+    ("session_lignes", SessionLigne),
+]
+
+
+def backup_page(request: HttpRequest) -> HttpResponse:
+    return render(request, "workouts/backup.html")
+
+
+def export_backup(request: HttpRequest) -> HttpResponse:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name, model in _BACKUP_MODELS:
+            data = django_serializers.serialize("json", model.objects.all(), indent=2)
+            zf.writestr(f"{name}.json", data)
+
+    buffer.seek(0)
+    filename = f"sport_backup_{date.today().isoformat()}.zip"
+    response = HttpResponse(buffer.read(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    logger.info("Backup exporté : %s", filename)
+    return response
+
+
+@require_POST
+def import_backup(request: HttpRequest) -> HttpResponse:
+    zip_file = request.FILES.get("backup_file")
+    if not zip_file:
+        messages.error(request, "Aucun fichier sélectionné.")
+        return redirect("workouts:backup_page")
+
+    if not zipfile.is_zipfile(zip_file):
+        messages.error(request, "Le fichier n'est pas un zip valide.")
+        return redirect("workouts:backup_page")
+
+    try:
+        with transaction.atomic():
+            # Suppression dans l'ordre inverse des FK
+            for name, model in reversed(_BACKUP_MODELS):
+                model.objects.all().delete()
+
+            # Réimport dans l'ordre des FK
+            zip_file.seek(0)
+            with zipfile.ZipFile(zip_file) as zf:
+                available = zf.namelist()
+                for name, _model in _BACKUP_MODELS:
+                    filename = f"{name}.json"
+                    if filename not in available:
+                        logger.warning("Fichier manquant dans le zip : %s", filename)
+                        continue
+                    data = zf.read(filename).decode("utf-8")
+                    for obj in django_serializers.deserialize("json", data):
+                        obj.save()
+
+        logger.info("Backup importé avec succès")
+        messages.success(request, "Import réussi — toutes les données ont été restaurées.")
+    except Exception as exc:
+        logger.exception("Échec de l'import backup : %s", exc)
+        messages.error(request, f"Erreur lors de l'import : {exc}")
+
+    return redirect("workouts:backup_page")
