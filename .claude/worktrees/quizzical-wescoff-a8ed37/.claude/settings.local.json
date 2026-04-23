@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cp -r /c/dev/sport-app/workouts/management /c/dev/sport-app/.claude/worktrees/quizzical-wescoff-a8ed37/workouts/)",
-      "Bash(cp -r /c/dev/sport-app/workouts/templates/workouts/partials/. /c/dev/sport-app/.claude/worktrees/quizzical-wescoff-a8ed37/workouts/templates/workouts/partials/)",
-      "Bash(git -C /c/dev/sport-app/.claude/worktrees/quizzical-wescoff-a8ed37 branch --show-current)"
-    ]
-  }
-}
