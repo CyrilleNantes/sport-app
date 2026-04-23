@@ -2,6 +2,7 @@ const timerTemplate = document.getElementById("rest-timer-template");
 const workoutList = document.getElementById("workout-list");
 let restTimerId = null;
 let activeTimerPanel = null;
+let visibilityHandler = null;
 
 function formatDuration(totalSeconds) {
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
@@ -21,16 +22,23 @@ function moveExerciseToBottomWhenComplete(exerciseBlock) {
   }
 }
 
-function startRestTimer(seconds, label, exerciseBlock) {
+// afterElement : la ligne de série qui vient d'être validée
+function startRestTimer(seconds, label, exerciseBlock, afterElement) {
+  // Nettoyage du timer précédent
   if (restTimerId) {
     window.clearInterval(restTimerId);
+    restTimerId = null;
   }
   if (activeTimerPanel) {
     activeTimerPanel.remove();
+    activeTimerPanel = null;
   }
-  if (!exerciseBlock) {
-    return;
+  if (visibilityHandler) {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    visibilityHandler = null;
   }
+
+  if (!exerciseBlock) return;
   if (!seconds) {
     moveExerciseToBottomWhenComplete(exerciseBlock);
     return;
@@ -39,20 +47,33 @@ function startRestTimer(seconds, label, exerciseBlock) {
   const timerPanel = timerTemplate.content.firstElementChild.cloneNode(true);
   const timerLabel = timerPanel.querySelector("[data-rest-timer-label]");
   const timerValue = timerPanel.querySelector("[data-rest-timer-value]");
-  const seriesList = exerciseBlock.querySelector(".series-list");
-  let remaining = seconds;
+
+  // Heure de fin absolue — résistant aux pauses et dérives de setInterval
+  const endTime = Date.now() + seconds * 1000;
+
   activeTimerPanel = timerPanel;
   timerPanel.classList.remove("finished");
   timerLabel.textContent = label;
-  timerValue.textContent = formatDuration(remaining);
-  exerciseBlock.insertBefore(timerPanel, seriesList);
-  timerPanel.scrollIntoView({behavior: "smooth", block: "center"});
+  timerValue.textContent = formatDuration(seconds);
 
-  restTimerId = window.setInterval(() => {
-    remaining -= 1;
+  // Positionnement : juste après la série validée, pas en haut du bloc
+  if (afterElement) {
+    afterElement.insertAdjacentElement("afterend", timerPanel);
+  } else {
+    const seriesList = exerciseBlock.querySelector(".series-list");
+    exerciseBlock.insertBefore(timerPanel, seriesList);
+  }
+
+  // Scroll minimal — juste assez pour rendre le timer visible
+  timerPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  function tick() {
+    const remaining = Math.ceil((endTime - Date.now()) / 1000);
     if (remaining <= 0) {
       window.clearInterval(restTimerId);
       restTimerId = null;
+      document.removeEventListener("visibilitychange", visibilityHandler);
+      visibilityHandler = null;
       timerValue.textContent = "00:00";
       timerLabel.textContent = `${label} - repos termine`;
       timerPanel.classList.add("finished");
@@ -60,7 +81,15 @@ function startRestTimer(seconds, label, exerciseBlock) {
       return;
     }
     timerValue.textContent = formatDuration(remaining);
-  }, 1000);
+  }
+
+  restTimerId = window.setInterval(tick, 1000);
+
+  // Resync immédiat quand l'écran se réveille (téléphone, onglet)
+  visibilityHandler = () => {
+    if (!document.hidden) tick();
+  };
+  document.addEventListener("visibilitychange", visibilityHandler);
 }
 
 document.querySelectorAll("[data-line-form]").forEach((form) => {
@@ -88,7 +117,8 @@ document.querySelectorAll("[data-line-form]").forEach((form) => {
         });
         button.textContent = "Validee";
         const label = `${data.exercise_name} ${data.serie_label}`;
-        startRestTimer(data.rest_seconds, label, exerciseBlock);
+        // On passe form pour positionner le timer juste en dessous
+        startRestTimer(data.rest_seconds, label, exerciseBlock, form);
       }
     } catch (error) {
       status.textContent = "Erreur";
@@ -103,9 +133,7 @@ document.querySelectorAll("[data-order-form]").forEach((form) => {
   let submitted = false;
 
   input.addEventListener("change", () => {
-    if (submitted) {
-      return;
-    }
+    if (submitted) return;
     submitted = true;
     form.requestSubmit();
   });
