@@ -1,8 +1,11 @@
-from itertools import groupby
+from __future__ import annotations
+
 import csv
+import logging
+from itertools import groupby
 
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -21,8 +24,10 @@ from .services import (
     update_exercise_order,
 )
 
+logger = logging.getLogger("workouts.views")
 
-def _group_lignes(lignes):
+
+def _group_lignes(lignes: list[SessionLigne]) -> list[dict]:
     sorted_lignes = sorted(
         lignes,
         key=lambda ligne: (
@@ -52,7 +57,7 @@ def _group_lignes(lignes):
     return groupes
 
 
-def dashboard(request):
+def dashboard(request: HttpRequest) -> HttpResponse:
     seances_actives = Seance.objects.filter(
         statut=StatutSeance.IN_PROGRESS
     ).select_related("seance_type")
@@ -77,7 +82,7 @@ def dashboard(request):
     )
 
 
-def planifier_seance(request):
+def planifier_seance(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = SeancePlanificationForm(request.POST)
         if form.is_valid():
@@ -85,6 +90,7 @@ def planifier_seance(request):
                 seance_type=form.cleaned_data["seance_type"],
                 date=form.cleaned_data["date"],
             )
+            logger.info("Séance planifiée : pk=%s type=%s", seance.pk, seance.seance_type)
             messages.success(request, "Seance planifiee.")
             return redirect("workouts:seance_detail", pk=seance.pk)
     else:
@@ -93,7 +99,7 @@ def planifier_seance(request):
     return render(request, "workouts/planifier_seance.html", {"form": form})
 
 
-def seance_detail(request, pk):
+def seance_detail(request: HttpRequest, pk: int) -> HttpResponse:
     seance = get_object_or_404(Seance.objects.select_related("seance_type"), pk=pk)
     lignes = list(seance.lignes.select_related("exercice"))
     forms_by_line = {
@@ -113,23 +119,25 @@ def seance_detail(request, pk):
 
 
 @require_POST
-def demarrer_seance(request, pk):
+def demarrer_seance(request: HttpRequest, pk: int) -> HttpResponse:
     seance = get_object_or_404(Seance, pk=pk)
     start_seance(seance)
+    logger.info("Séance démarrée : pk=%s", seance.pk)
     messages.success(request, "Seance demarree.")
     return redirect("workouts:seance_detail", pk=seance.pk)
 
 
 @require_POST
-def terminer_seance(request, pk):
+def terminer_seance(request: HttpRequest, pk: int) -> HttpResponse:
     seance = get_object_or_404(Seance, pk=pk)
     complete_seance(seance)
+    logger.info("Séance terminée : pk=%s durée=%s", seance.pk, seance.duration)
     messages.success(request, "Seance terminee.")
     return redirect("workouts:seance_detail", pk=seance.pk)
 
 
 @require_POST
-def update_ligne(request, pk):
+def update_ligne(request: HttpRequest, pk: int) -> HttpResponse:
     ligne = get_object_or_404(
         SessionLigne.objects.select_related("seance", "exercice"),
         pk=pk,
@@ -137,6 +145,7 @@ def update_ligne(request, pk):
     form = SessionLigneQuickForm(request.POST, instance=ligne)
     wants_json = request.headers.get("Accept") == "application/json"
     if ligne.is_completed:
+        logger.warning("Tentative de re-validation ligne déjà validée : pk=%s", pk)
         error_payload = {
             "ok": False,
             "errors": {"__all__": ["Cette serie est deja validee."]},
@@ -149,6 +158,10 @@ def update_ligne(request, pk):
         ligne = form.save(commit=False)
         ligne.mark_completed()
         ligne.save()
+        logger.info(
+            "Série validée : ligne_pk=%s exercice=%s serie=%s volume=%s",
+            ligne.pk, ligne.exercice.nom, ligne.numero_serie, ligne.volume,
+        )
         if wants_json:
             return JsonResponse(
                 {
@@ -163,6 +176,7 @@ def update_ligne(request, pk):
             )
         messages.success(request, "Serie enregistree.")
     elif wants_json:
+        logger.debug("Formulaire invalide pour ligne pk=%s : %s", pk, form.errors)
         return JsonResponse({"ok": False, "errors": form.errors}, status=400)
     else:
         messages.error(request, "Impossible d'enregistrer cette serie.")
@@ -171,7 +185,7 @@ def update_ligne(request, pk):
 
 
 @require_POST
-def update_ordre_exercice(request, pk, ordre_prevu):
+def update_ordre_exercice(request: HttpRequest, pk: int, ordre_prevu: int) -> HttpResponse:
     seance = get_object_or_404(Seance, pk=pk)
     wants_json = request.headers.get("Accept") == "application/json"
 
@@ -181,6 +195,7 @@ def update_ordre_exercice(request, pk, ordre_prevu):
         if ordre_reel < 1:
             raise ValueError
     except ValueError:
+        logger.warning("Ordre invalide reçu : '%s' pour séance pk=%s", raw_value, pk)
         payload = {"ok": False, "errors": {"ordre": ["Ordre invalide."]}}
         if wants_json:
             return JsonResponse(payload, status=400)
@@ -191,6 +206,10 @@ def update_ordre_exercice(request, pk, ordre_prevu):
         seance=seance,
         ordre_prevu=ordre_prevu,
         ordre_reel=ordre_reel,
+    )
+    logger.debug(
+        "Ordre exercice mis à jour : séance pk=%s ordre_prevu=%s → ordre_reel=%s (%s lignes)",
+        pk, ordre_prevu, current_order, updated_count,
     )
     if wants_json:
         return JsonResponse(
@@ -204,19 +223,24 @@ def update_ordre_exercice(request, pk, ordre_prevu):
 
 
 @require_POST
-def ajouter_ligne(request, pk):
+def ajouter_ligne(request: HttpRequest, pk: int) -> HttpResponse:
     seance = get_object_or_404(Seance, pk=pk)
     form = AddSessionLineForm(request.POST)
     if form.is_valid():
-        add_unplanned_session_line(seance=seance, **form.cleaned_data)
+        ligne = add_unplanned_session_line(seance=seance, **form.cleaned_data)
+        logger.info(
+            "Série hors-template ajoutée : séance pk=%s exercice=%s",
+            pk, ligne.exercice.nom,
+        )
         messages.success(request, "Serie ajoutee.")
     else:
+        logger.debug("Formulaire ajouter_ligne invalide : %s", form.errors)
         messages.error(request, "Impossible d'ajouter cette serie.")
     return redirect("workouts:seance_detail", pk=seance.pk)
 
 
 @require_POST
-def update_notes(request, pk):
+def update_notes(request: HttpRequest, pk: int) -> HttpResponse:
     seance = get_object_or_404(Seance, pk=pk)
     form = SeanceNotesForm(request.POST, instance=seance)
     if form.is_valid():
@@ -227,7 +251,7 @@ def update_notes(request, pk):
     return redirect("workouts:seance_detail", pk=seance.pk)
 
 
-def historique(request):
+def historique(request: HttpRequest) -> HttpResponse:
     seances = (
         Seance.objects.filter(statut=StatutSeance.COMPLETED)
         .select_related("seance_type")
@@ -237,7 +261,7 @@ def historique(request):
     return render(request, "workouts/historique.html", {"seances": seances})
 
 
-def export_csv(request):
+def export_csv(request: HttpRequest) -> HttpResponse:
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="sport-app-export.csv"'
 
@@ -265,6 +289,8 @@ def export_csv(request):
     lignes = SessionLigne.objects.select_related(
         "seance", "seance__seance_type", "exercice"
     ).order_by("seance__date", "seance_id", "ordre_prevu", "numero_serie")
+
+    row_count = 0
     for ligne in lignes:
         writer.writerow(
             [
@@ -285,4 +311,7 @@ def export_csv(request):
                 ligne.completed_at or "",
             ]
         )
+        row_count += 1
+
+    logger.info("Export CSV : %s lignes exportées", row_count)
     return response

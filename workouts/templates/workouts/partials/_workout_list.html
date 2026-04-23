@@ -1,0 +1,78 @@
+{% load workout_extras %}
+
+<template id="rest-timer-template">
+  <section class="rest-timer" data-rest-timer>
+    <div>
+      <p class="eyebrow">Chrono repos</p>
+      <strong data-rest-timer-label>Pret</strong>
+    </div>
+    <div class="rest-timer-value" data-rest-timer-value>00:00</div>
+  </section>
+</template>
+
+<section class="workout" id="workout-list">
+  {% for groupe in groupes %}
+    <div class="exercise-block" data-exercise-block>
+      <div class="exercise-title">
+        <form
+          method="post"
+          action="{% url 'workouts:update_ordre_exercice' seance.pk groupe.ordre_source %}"
+          class="exercise-order-form"
+          data-order-form
+        >
+          {% csrf_token %}
+          <span class="order">{{ groupe.ordre }}</span>
+          <label class="order-inline">
+            <span>Ordre</span>
+            <input
+              type="number"
+              name="ordre"
+              value="{{ groupe.ordre }}"
+              min="1"
+              inputmode="numeric"
+            >
+          </label>
+          <input type="submit" class="order-submit" value="Enregistrer" hidden>
+          <noscript>
+            <button type="submit" class="button compact order-fallback">Enregistrer</button>
+          </noscript>
+        </form>
+        <h2>{{ groupe.exercice.nom }}</h2>
+      </div>
+      <div class="series-list">
+        {% for ligne in groupe.lignes %}
+          {% with form=forms_by_line|get_item:ligne.pk %}
+          <form method="post" action="{% url 'workouts:update_ligne' ligne.pk %}" class="series-row {% if ligne.is_completed %}done{% endif %}" data-line-form>
+            {% csrf_token %}
+            <div class="series-meta">
+              <strong>S{{ ligne.numero_serie }}</strong>
+              <span>{{ ligne.repetitions_cible|default:"-" }} reps / {{ ligne.charge_cible|default:"-" }} kg / RPE {{ ligne.rpe_cible|default:"-" }}</span>
+            </div>
+            <label>
+              Reps
+              {{ form.repetitions_reelles }}
+            </label>
+            <label>
+              Kg
+              {{ form.charge_reelle }}
+            </label>
+            <label>
+              RPE
+              {{ form.rpe_reel }}
+            </label>
+            <button class="button compact" type="submit" {% if ligne.is_completed %}disabled{% endif %}>
+              {% if ligne.is_completed %}Validee{% else %}OK{% endif %}
+            </button>
+            <div class="line-feedback">
+              <span class="line-status">{% if ligne.is_completed %}Validee{% if ligne.completed_at %} {{ ligne.completed_at|date:"H:i" }}{% endif %}{% endif %}</span>
+              <span class="line-rest">{% if ligne.repos_secondes %}Repos {{ ligne.repos_secondes }} s{% endif %}</span>
+            </div>
+          </form>
+          {% endwith %}
+        {% endfor %}
+      </div>
+    </div>
+  {% empty %}
+    <p class="muted">Cette seance ne contient pas encore de serie.</p>
+  {% endfor %}
+</section>
