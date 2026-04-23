@@ -138,3 +138,9 @@ document.querySelectorAll("[data-order-form]").forEach((form) => {
     form.requestSubmit();
   });
 });
+
+// Au chargement de la page, repousser en bas les exercices déjà complétés
+// (rechargement après ajout d'un exercice, retour sur la page, etc.)
+document.querySelectorAll("[data-exercise-block]").forEach((block) => {
+  moveExerciseToBottomWhenComplete(block);
+});
