@@ -3,8 +3,8 @@ from django.conf import settings
 
 def environment(request):
     """Injecte l'environnement courant dans tous les templates."""
-    env = getattr(settings, "ENVIRONMENT", "production")
+    env = getattr(settings, "APP_ENV", "production")
     return {
-        "ENVIRONMENT": env,
+        "APP_ENV": env,
         "IS_DEV": env != "production",
     }
