@@ -1,57 +1,186 @@
 {% extends "workouts/base.html" %}
 
-{% block title %}Tableau de bord{% endblock %}
+{% block title %}Tableau de bord — Sport app{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <div>
-    <p class="eyebrow">MVP musculation</p>
-    <h1>Planifier, saisir, progresser.</h1>
-  </div>
-  <a class="button primary" href="{% url 'workouts:planifier_seance' %}">Planifier une seance</a>
-</section>
+<div class="dashboard-grid">
 
-<section class="grid two">
-  <div>
-    <h2>En cours</h2>
-    <div class="stack">
-      {% for seance in seances_actives %}
-        <a class="session-row active" href="{% url 'workouts:seance_detail' seance.pk %}">
-          <span>{{ seance }}</span>
-          <strong>{{ seance.get_statut_display }}</strong>
-        </a>
-      {% empty %}
-        <p class="muted">Aucune seance en cours.</p>
-      {% endfor %}
-    </div>
+  <!-- Colonne gauche -->
+  <div class="dashboard-left">
+    <a class="button primary full-width" href="{% url 'workouts:planifier_seance' %}">Planifier une seance</a>
+
+    <section>
+      <h2>Planifiees</h2>
+      <div class="stack">
+        {% for seance in prochaines %}
+          <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
+            <span>{{ seance }}</span>
+            <strong>{{ seance.date|date:"d/m" }}</strong>
+          </a>
+        {% empty %}
+          <p class="muted">Aucune seance planifiee.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <h2>Dernieres seances</h2>
+      <div class="stack">
+        {% for seance in recentes %}
+          <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
+            <span>{{ seance }}</span>
+            <strong>{{ seance.duration|default:"-" }}</strong>
+          </a>
+        {% empty %}
+          <p class="muted">Pas encore d'historique.</p>
+        {% endfor %}
+      </div>
+    </section>
   </div>
 
-  <div>
-    <h2>Planifiees</h2>
-    <div class="stack">
-      {% for seance in prochaines %}
-        <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
-          <span>{{ seance }}</span>
-          <strong>{{ seance.date|date:"d/m" }}</strong>
-        </a>
-      {% empty %}
-        <p class="muted">Aucune seance planifiee.</p>
-      {% endfor %}
-    </div>
-  </div>
-</section>
+  <!-- Colonne droite -->
+  <div class="dashboard-right">
 
-<section>
-  <h2>Dernieres seances</h2>
-  <div class="stack">
-    {% for seance in recentes %}
-      <a class="session-row completed" href="{% url 'workouts:seance_detail' seance.pk %}">
-        <span>{{ seance }}</span>
-        <strong>{{ seance.duration|default:"-" }}</strong>
+    {% if seances_actives %}
+    <section>
+      <h2>En cours</h2>
+      <div class="stack">
+        {% for seance in seances_actives %}
+          <a class="session-row active" href="{% url 'workouts:seance_detail' seance.pk %}">
+            <span>{{ seance }}</span>
+            <strong>{{ seance.get_statut_display }}</strong>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Progression</h2>
+      <div class="chart-card">
+        <div class="dashboard-selectors">
+          <select id="db-exercice-select" class="exercice-select">
+            <option value="">— Exercice —</option>
+            {% for ex in exercices %}
+              <option value="{{ ex.pk }}">{{ ex.nom }}</option>
+            {% endfor %}
+          </select>
+          <select id="db-indicateur-select" class="exercice-select">
+            <option value="1rm">1RM estimé</option>
+            <option value="tonnage">Tonnage</option>
+          </select>
+        </div>
+        <div class="chart-empty" id="db-chart-empty">
+          <p>Sélectionne un exercice.</p>
+        </div>
+        <div class="chart-meta" id="db-chart-meta" hidden>
+          <span class="chart-title" id="db-chart-title"></span>
+          <span class="chart-pr" id="db-chart-pr"></span>
+        </div>
+        <div class="chart-wrap" id="db-chart-wrap" hidden>
+          <canvas id="db-progression-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    {% if derniere_mensuration %}
+    <section>
+      <h2>Dernieres Mensurations</h2>
+      <a class="mensuration-card" href="{% url 'workouts:mensurations' %}">
+        <span class="mensuration-date">{{ derniere_mensuration.date|date:"d/m/Y" }}</span>
+        <div class="mensuration-row">
+          {% if derniere_mensuration.poids %}<span><strong>{{ derniere_mensuration.poids }} kg</strong><em>Poids</em></span>{% endif %}
+          {% if derniere_mensuration.masse_grasse %}<span><strong>{{ derniere_mensuration.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
+          {% if derniere_mensuration.tour_taille %}<span><strong>{{ derniere_mensuration.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
+          {% if derniere_mensuration.tour_hanches %}<span><strong>{{ derniere_mensuration.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
+          {% if derniere_mensuration.tour_bras %}<span><strong>{{ derniere_mensuration.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}
+          {% if derniere_mensuration.tour_cuisse %}<span><strong>{{ derniere_mensuration.tour_cuisse }} cm</strong><em>Cuisse</em></span>{% endif %}
+        </div>
       </a>
-    {% empty %}
-      <p class="muted">Pas encore d'historique.</p>
-    {% endfor %}
+    </section>
+    {% endif %}
+
   </div>
-</section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const exSelect = document.getElementById("db-exercice-select");
+  const indSelect = document.getElementById("db-indicateur-select");
+  const chartEmpty = document.getElementById("db-chart-empty");
+  const chartMeta = document.getElementById("db-chart-meta");
+  const chartWrap = document.getElementById("db-chart-wrap");
+  const chartTitle = document.getElementById("db-chart-title");
+  const chartPr = document.getElementById("db-chart-pr");
+  const canvas = document.getElementById("db-progression-chart");
+  let chart = null;
+
+  function showEmpty(msg) {
+    chartEmpty.querySelector("p").textContent = msg || "Sélectionne un exercice.";
+    chartEmpty.hidden = false;
+    chartMeta.hidden = true;
+    chartWrap.hidden = true;
+  }
+
+  async function loadData() {
+    const id = exSelect.value;
+    const ind = indSelect.value;
+    if (!id) { showEmpty(); return; }
+
+    const res = await fetch(`{% url 'workouts:progression_data' %}?exercice_id=${id}&indicateur=${ind}`);
+    const data = await res.json();
+
+    if (!data.ok || data.labels.length === 0) {
+      showEmpty("Aucune donnée pour cet exercice.");
+      return;
+    }
+
+    chartEmpty.hidden = true;
+    chartMeta.hidden = false;
+    chartWrap.hidden = false;
+    chartTitle.textContent = data.exercice_nom;
+    chartPr.textContent = data.pr ? `PR : ${data.pr} ${data.unite}` : "";
+
+    const datasets = [{
+      label: data.unite,
+      data: data.values,
+      borderColor: "#147d64",
+      backgroundColor: "rgba(20,125,100,0.08)",
+      borderWidth: 2.5,
+      pointBackgroundColor: "#147d64",
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
+      tension: 0.3,
+    }];
+
+    if (data.pr) datasets.push({
+      type: "line", label: "PR", data: data.labels.map(() => data.pr),
+      borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5,
+      pointRadius: 0, fill: false,
+    });
+
+    if (chart) chart.destroy();
+    chart = new Chart(canvas, {
+      type: "line",
+      data: { labels: data.labels, datasets },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } },
+        },
+        scales: {
+          x: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064", maxTicksLimit: 6 } },
+          y: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064", callback: v => `${v} kg` } },
+        },
+      },
+    });
+  }
+
+  exSelect.addEventListener("change", loadData);
+  indSelect.addEventListener("change", loadData);
+</script>
 {% endblock %}

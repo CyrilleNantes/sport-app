@@ -6,10 +6,14 @@
 <div class="progression-header">
   <h1>Progression</h1>
   <select id="exercice-select" class="exercice-select">
-    <option value="">— Choisir un exercice —</option>
+    <option value="">— Exercice —</option>
     {% for ex in exercices %}
       <option value="{{ ex.pk }}">{{ ex.nom }}</option>
     {% endfor %}
+  </select>
+  <select id="indicateur-select" class="exercice-select">
+    <option value="1rm">1RM estimé</option>
+    <option value="tonnage">Tonnage</option>
   </select>
 </div>
 
@@ -30,75 +34,60 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  const select = document.getElementById("exercice-select");
+  const exSelect = document.getElementById("exercice-select");
+  const indSelect = document.getElementById("indicateur-select");
   const chartEmpty = document.getElementById("chart-empty");
   const chartMeta = document.getElementById("chart-meta");
   const chartWrap = document.getElementById("chart-wrap");
   const chartTitle = document.getElementById("chart-title");
   const chartPr = document.getElementById("chart-pr");
   const canvas = document.getElementById("progression-chart");
-
   let chart = null;
 
-  select.addEventListener("change", () => {
-    const id = select.value;
-    if (!id) {
-      showEmpty();
-      return;
-    }
-    loadData(id);
-  });
-
-  function showEmpty() {
+  function showEmpty(msg) {
+    chartEmpty.querySelector("p").textContent = msg || "Sélectionne un exercice pour afficher sa progression.";
     chartEmpty.hidden = false;
     chartMeta.hidden = true;
     chartWrap.hidden = true;
   }
 
-  async function loadData(exerciceId) {
-    const res = await fetch(`{% url 'workouts:progression_data' %}?exercice_id=${exerciceId}`);
+  async function loadData() {
+    const id = exSelect.value;
+    const ind = indSelect.value;
+    if (!id) { showEmpty(); return; }
+
+    const res = await fetch(`{% url 'workouts:progression_data' %}?exercice_id=${id}&indicateur=${ind}`);
     const data = await res.json();
 
     if (!data.ok || data.labels.length === 0) {
-      chartEmpty.textContent = "Aucune donnée pour cet exercice.";
-      chartEmpty.hidden = false;
-      chartMeta.hidden = true;
-      chartWrap.hidden = true;
+      showEmpty("Aucune donnée pour cet exercice.");
       return;
     }
 
     chartEmpty.hidden = true;
     chartMeta.hidden = false;
     chartWrap.hidden = false;
-
     chartTitle.textContent = data.exercice_nom;
-    chartPr.textContent = data.pr ? `PR : ${data.pr} kg (1RM estimé)` : "";
+    chartPr.textContent = data.pr ? `PR : ${data.pr} ${data.unite}` : "";
 
-    renderChart(data);
-  }
+    const datasets = [{
+      label: data.unite,
+      data: data.values,
+      borderColor: "#147d64",
+      backgroundColor: "rgba(20,125,100,0.08)",
+      borderWidth: 2.5,
+      pointBackgroundColor: "#147d64",
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
+      tension: 0.3,
+    }];
 
-  function renderChart(data) {
-    const prLine = data.pr
-      ? { type: "line", label: "PR", data: data.labels.map(() => data.pr),
-          borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5,
-          pointRadius: 0, fill: false }
-      : null;
-
-    const datasets = [
-      {
-        label: "1RM estimé (kg)",
-        data: data.values,
-        borderColor: "#147d64",
-        backgroundColor: "rgba(20,125,100,0.08)",
-        borderWidth: 2.5,
-        pointBackgroundColor: "#147d64",
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        fill: true,
-        tension: 0.3,
-      },
-    ];
-    if (prLine) datasets.push(prLine);
+    if (data.pr) datasets.push({
+      type: "line", label: "PR", data: data.labels.map(() => data.pr),
+      borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5,
+      pointRadius: 0, fill: false,
+    });
 
     if (chart) chart.destroy();
     chart = new Chart(canvas, {
@@ -109,21 +98,17 @@
         maintainAspectRatio: true,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.parsed.y} kg`,
-            },
-          },
+          tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } },
         },
         scales: {
           x: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064" } },
-          y: {
-            grid: { color: "#dfe5dc" },
-            ticks: { color: "#667064", callback: v => `${v} kg` },
-          },
+          y: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064", callback: v => `${v} kg` } },
         },
       },
     });
   }
+
+  exSelect.addEventListener("change", loadData);
+  indSelect.addEventListener("change", loadData);
 </script>
 {% endblock %}
