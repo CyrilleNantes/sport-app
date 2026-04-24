@@ -6,102 +6,101 @@
 {% block content %}
 <div class="dashboard-grid">
 
-  <!-- Colonne gauche -->
-  <div class="dashboard-left">
+  <!-- Ligne 1 gauche : bouton action -->
+  <div class="db-cell db-action">
     <a class="button primary full-width" href="{% url 'workouts:planifier_seance' %}">Planifier une seance</a>
-
-    <section>
-      <h2>Planifiees</h2>
-      <div class="stack">
-        {% for seance in prochaines %}
-          <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
-            <span>{{ seance }}</span>
-            <strong>{{ seance.date|relative_date }}</strong>
-          </a>
-        {% empty %}
-          <p class="muted">Aucune seance planifiee.</p>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section>
-      <h2>Dernieres seances</h2>
-      <div class="stack">
-        {% for seance in recentes %}
-          <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
-            <span>{{ seance }}</span>
-            <strong>{{ seance.duration|format_duration }}</strong>
-          </a>
-        {% empty %}
-          <p class="muted">Pas encore d'historique.</p>
-        {% endfor %}
-      </div>
-    </section>
   </div>
 
-  <!-- Colonne droite -->
-  <div class="dashboard-right">
+  <!-- Ligne 1 droite : en cours -->
+  <div class="db-cell db-encours">
+    <h2>En cours</h2>
+    <div class="stack">
+      {% for seance in seances_actives %}
+        <a class="session-row active" href="{% url 'workouts:seance_detail' seance.pk %}">
+          <span>{{ seance }}</span>
+          <strong>{{ seance.get_statut_display }}</strong>
+        </a>
+      {% empty %}
+        <p class="muted">Aucune seance en cours.</p>
+      {% endfor %}
+    </div>
+  </div>
 
-    {% if seances_actives %}
-    <section>
-      <h2>En cours</h2>
-      <div class="stack">
-        {% for seance in seances_actives %}
-          <a class="session-row active" href="{% url 'workouts:seance_detail' seance.pk %}">
-            <span>{{ seance }}</span>
-            <strong>{{ seance.get_statut_display }}</strong>
-          </a>
-        {% endfor %}
+  <!-- Ligne 2 gauche : planifiées -->
+  <div class="db-cell db-planifiees">
+    <h2>Planifiees</h2>
+    <div class="stack">
+      {% for seance in prochaines %}
+        <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
+          <span>{{ seance }}</span>
+          <strong>{{ seance.date|relative_date }}</strong>
+        </a>
+      {% empty %}
+        <p class="muted">Aucune seance planifiee.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Ligne 2 droite : progression -->
+  <div class="db-cell db-progression">
+    <h2>Progression</h2>
+    <div class="chart-card">
+      <div class="chart-meta" style="margin-bottom:1rem">
+        <select id="db-exercice-select" class="exercice-select">
+          <option value="">— Exercice —</option>
+          {% for ex in exercices %}
+            <option value="{{ ex.pk }}">{{ ex.nom }}</option>
+          {% endfor %}
+        </select>
+        <select id="db-indicateur-select" class="exercice-select">
+          <option value="1rm">1RM estimé</option>
+          <option value="tonnage">Tonnage</option>
+        </select>
       </div>
-    </section>
-    {% endif %}
-
-    <section>
-      <h2>Progression</h2>
-      <div class="chart-card">
-        <div class="chart-meta" style="margin-bottom:1rem">
-          <select id="db-exercice-select" class="exercice-select">
-            <option value="">— Exercice —</option>
-            {% for ex in exercices %}
-              <option value="{{ ex.pk }}">{{ ex.nom }}</option>
-            {% endfor %}
-          </select>
-          <select id="db-indicateur-select" class="exercice-select">
-            <option value="1rm">1RM estimé</option>
-            <option value="tonnage">Tonnage</option>
-          </select>
-        </div>
-        <div class="chart-empty" id="db-chart-empty">
-          <p>Sélectionne un exercice.</p>
-        </div>
-        <div class="chart-meta" id="db-chart-meta" hidden>
-          <span class="chart-title" id="db-chart-title"></span>
-          <span class="chart-pr" id="db-chart-pr"></span>
-        </div>
-        <div class="chart-wrap" id="db-chart-wrap" hidden>
-          <canvas id="db-progression-chart"></canvas>
-        </div>
+      <div class="chart-empty" id="db-chart-empty"><p>Sélectionne un exercice.</p></div>
+      <div class="chart-meta" id="db-chart-meta" hidden>
+        <span class="chart-title" id="db-chart-title"></span>
+        <span class="chart-pr" id="db-chart-pr"></span>
       </div>
-    </section>
+      <div class="chart-wrap" id="db-chart-wrap" hidden>
+        <canvas id="db-progression-chart"></canvas>
+      </div>
+    </div>
+  </div>
 
+  <!-- Ligne 3 gauche : dernières séances -->
+  <div class="db-cell db-recentes">
+    <h2>Dernieres seances</h2>
+    <div class="stack">
+      {% for seance in recentes %}
+        <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
+          <span>{{ seance }}</span>
+          <strong>{{ seance.duration|format_duration }}</strong>
+        </a>
+      {% empty %}
+        <p class="muted">Pas encore d'historique.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Ligne 3 droite : dernières mensurations -->
+  <div class="db-cell db-mensurations">
     {% if derniere_mensuration %}
-    <section>
-      <h2>Dernieres Mensurations</h2>
-      <a class="mensuration-card" href="{% url 'workouts:mensurations' %}">
-        <span class="mensuration-date">{{ derniere_mensuration.date|date:"d/m/Y" }}</span>
-        <div class="mensuration-row">
-          {% if derniere_mensuration.poids %}<span><strong>{{ derniere_mensuration.poids }} kg</strong><em>Poids</em></span>{% endif %}
-          {% if derniere_mensuration.masse_grasse %}<span><strong>{{ derniere_mensuration.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
-          {% if derniere_mensuration.tour_taille %}<span><strong>{{ derniere_mensuration.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
-          {% if derniere_mensuration.tour_hanches %}<span><strong>{{ derniere_mensuration.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
-          {% if derniere_mensuration.tour_bras %}<span><strong>{{ derniere_mensuration.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}
-          {% if derniere_mensuration.tour_cuisse %}<span><strong>{{ derniere_mensuration.tour_cuisse }} cm</strong><em>Cuisse</em></span>{% endif %}
-        </div>
-      </a>
-    </section>
+    <h2>Dernieres Mensurations</h2>
+    <a class="mensuration-card" href="{% url 'workouts:mensurations' %}">
+      <span class="mensuration-date">{{ derniere_mensuration.date|date:"d/m/Y" }}</span>
+      <div class="mensuration-row">
+        {% if derniere_mensuration.poids %}<span><strong>{{ derniere_mensuration.poids }} kg</strong><em>Poids</em></span>{% endif %}
+        {% if derniere_mensuration.masse_grasse %}<span><strong>{{ derniere_mensuration.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
+        {% if derniere_mensuration.tour_taille %}<span><strong>{{ derniere_mensuration.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
+        {% if derniere_mensuration.tour_hanches %}<span><strong>{{ derniere_mensuration.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
+        {% if derniere_mensuration.tour_bras %}<span><strong>{{ derniere_mensuration.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}
+        {% if derniere_mensuration.tour_cuisse %}<span><strong>{{ derniere_mensuration.tour_cuisse }} cm</strong><em>Cuisse</em></span>{% endif %}
+      </div>
+    </a>
     {% endif %}
-
   </div>
+
 </div>
 {% endblock %}
 
@@ -133,10 +132,7 @@
     const res = await fetch(`{% url 'workouts:progression_data' %}?exercice_id=${id}&indicateur=${ind}`);
     const data = await res.json();
 
-    if (!data.ok || data.labels.length === 0) {
-      showEmpty("Aucune donnée pour cet exercice.");
-      return;
-    }
+    if (!data.ok || data.labels.length === 0) { showEmpty("Aucune donnée pour cet exercice."); return; }
 
     chartEmpty.hidden = true;
     chartMeta.hidden = false;
@@ -145,22 +141,14 @@
     chartPr.textContent = data.pr ? `PR : ${data.pr} ${data.unite}` : "";
 
     const datasets = [{
-      label: data.unite,
-      data: data.values,
-      borderColor: "#147d64",
-      backgroundColor: "rgba(20,125,100,0.08)",
-      borderWidth: 2.5,
-      pointBackgroundColor: "#147d64",
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      fill: true,
-      tension: 0.3,
+      label: data.unite, data: data.values,
+      borderColor: "#147d64", backgroundColor: "rgba(20,125,100,0.08)",
+      borderWidth: 2.5, pointBackgroundColor: "#147d64",
+      pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.3,
     }];
-
     if (data.pr) datasets.push({
       type: "line", label: "PR", data: data.labels.map(() => data.pr),
-      borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5,
-      pointRadius: 0, fill: false,
+      borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
     });
 
     if (chart) chart.destroy();

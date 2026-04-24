@@ -560,27 +560,16 @@ textarea {
 .dashboard-grid {
   display: grid;
   grid-template-columns: 3fr 7fr;
-  gap: 2.5rem;
+  column-gap: 2.5rem;
+  row-gap: 2rem;
   align-items: start;
 }
 
-.dashboard-left,
-.dashboard-right {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
+.db-cell { min-width: 0; }
 
 .full-width {
   width: 100%;
   text-align: center;
-}
-
-.dashboard-selectors {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
 }
 
 .mensuration-card {
@@ -633,6 +622,12 @@ textarea {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+  .db-action     { order: 1; }
+  .db-encours    { order: 2; }
+  .db-planifiees { order: 3; }
+  .db-progression { order: 4; }
+  .db-mensurations { order: 5; }
+  .db-recentes   { order: 6; }
 }
 
 /* ── Progression ──────────────────────────────────────────── */
