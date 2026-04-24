@@ -156,5 +156,11 @@
 
   exSelect.addEventListener("change", loadData);
   indSelect.addEventListener("change", loadData);
+
+  // Pré-sélection au chargement : Hip Thrust barre (ou premier exercice), tonnage
+  const hipThrust = Array.from(exSelect.options).find(o => o.text.toLowerCase().includes("hip thrust"));
+  exSelect.value = hipThrust ? hipThrust.value : (exSelect.options[1]?.value || "");
+  indSelect.value = "tonnage";
+  if (exSelect.value) loadData();
 </script>
 {% endblock %}
