@@ -9,6 +9,7 @@
 </head>
 
 <body>
+  <p style="background:red;color:white;padding:4px">APP_ENV={{ APP_ENV }} | IS_DEV={{ IS_DEV }}</p>
   {% if IS_DEV %}
   <div class="dev-banner">⚠ DEV — base de données de test, pas la prod</div>
   {% endif %}
