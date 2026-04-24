@@ -43,6 +43,19 @@ h2 {
   font-size: 1.25rem;
 }
 
+.dev-banner {
+  background: var(--accent);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 5vw;
+  position: sticky;
+  text-align: center;
+  top: 0;
+  z-index: 6;
+}
+
 .topbar {
   align-items: center;
   background: rgba(246, 247, 244, 0.92);
