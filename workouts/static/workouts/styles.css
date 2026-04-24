@@ -561,15 +561,15 @@ textarea {
   display: grid;
   grid-template-columns: 3fr 7fr;
   column-gap: 2.5rem;
-  row-gap: 2rem;
   align-items: start;
 }
 
-.db-cell { min-width: 0; }
-
-.full-width {
-  width: 100%;
-  text-align: center;
+.db-left,
+.db-right {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-width: 0;
 }
 
 .mensuration-card {
@@ -622,12 +622,6 @@ textarea {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-  .db-action     { order: 1; }
-  .db-encours    { order: 2; }
-  .db-planifiees { order: 3; }
-  .db-progression { order: 4; }
-  .db-mensurations { order: 5; }
-  .db-recentes   { order: 6; }
 }
 
 /* ── Progression ──────────────────────────────────────────── */
