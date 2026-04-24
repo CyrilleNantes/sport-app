@@ -1,18 +1,12 @@
 {% extends "workouts/base.html" %}
+{% load workout_extras %}
 
-{% block title %}Tableau de bord{% endblock %}
+{% block title %}Tableau de bord — Sport app{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <div>
-    <p class="eyebrow">MVP musculation</p>
-    <h1>Planifier, saisir, progresser.</h1>
-  </div>
-  <a class="button primary" href="{% url 'workouts:planifier_seance' %}">Planifier une seance</a>
-</section>
+<div class="dashboard-grid">
 
-<section class="grid two">
-  <div>
+  <div class="db-encours">
     <h2>En cours</h2>
     <div class="stack">
       {% for seance in seances_actives %}
@@ -26,32 +20,154 @@
     </div>
   </div>
 
-  <div>
+  <div class="db-progression">
+    <h2>Progression</h2>
+    <div class="chart-card">
+      <div class="chart-meta" style="margin-bottom:1rem">
+        <select id="db-exercice-select" class="exercice-select">
+          <option value="">— Exercice —</option>
+          {% for ex in exercices %}
+            <option value="{{ ex.pk }}">{{ ex.nom }}</option>
+          {% endfor %}
+        </select>
+        <select id="db-indicateur-select" class="exercice-select">
+          <option value="1rm">1RM estimé</option>
+          <option value="tonnage">Tonnage</option>
+        </select>
+      </div>
+      <div class="chart-empty" id="db-chart-empty"><p>Sélectionne un exercice.</p></div>
+      <div class="chart-meta" id="db-chart-meta" hidden>
+        <span class="chart-title" id="db-chart-title"></span>
+        <span class="chart-pr" id="db-chart-pr"></span>
+      </div>
+      <div class="chart-wrap" id="db-chart-wrap" hidden>
+        <canvas id="db-progression-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="db-planifiees">
     <h2>Planifiees</h2>
     <div class="stack">
       {% for seance in prochaines %}
         <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
           <span>{{ seance }}</span>
-          <strong>{{ seance.date|date:"d/m" }}</strong>
+          <strong>{{ seance.date|relative_date }}</strong>
         </a>
       {% empty %}
         <p class="muted">Aucune seance planifiee.</p>
       {% endfor %}
     </div>
   </div>
-</section>
 
-<section>
-  <h2>Dernieres seances</h2>
-  <div class="stack">
-    {% for seance in recentes %}
-      <a class="session-row completed" href="{% url 'workouts:seance_detail' seance.pk %}">
-        <span>{{ seance }}</span>
-        <strong>{{ seance.duration|default:"-" }}</strong>
-      </a>
-    {% empty %}
-      <p class="muted">Pas encore d'historique.</p>
-    {% endfor %}
+  <div class="db-recentes">
+    <h2>Dernieres seances</h2>
+    <div class="stack">
+      {% for seance in recentes %}
+        <a class="session-row" href="{% url 'workouts:seance_detail' seance.pk %}">
+          <span>{{ seance }}</span>
+          <strong>{{ seance.duration|format_duration }}</strong>
+        </a>
+      {% empty %}
+        <p class="muted">Pas encore d'historique.</p>
+      {% endfor %}
+    </div>
   </div>
-</section>
+
+  {% if dernieres_mensurations %}
+  <div class="db-mensurations">
+    <h2>Dernieres Mensurations</h2>
+    <div class="stack">
+      {% for m in dernieres_mensurations %}
+      <a class="mensuration-card" href="{% url 'workouts:mensurations' %}">
+        <span class="mensuration-date">{{ m.date|date:"d/m/Y" }}</span>
+        <div class="mensuration-row">
+          {% if m.poids %}<span><strong>{{ m.poids }} kg</strong><em>Poids</em></span>{% endif %}
+          {% if m.masse_grasse %}<span><strong>{{ m.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
+          {% if m.tour_taille %}<span><strong>{{ m.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
+          {% if m.tour_hanches %}<span><strong>{{ m.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
+          {% if m.tour_bras %}<span><strong>{{ m.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}
+          {% if m.tour_cuisse %}<span><strong>{{ m.tour_cuisse }} cm</strong><em>Cuisse</em></span>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const exSelect = document.getElementById("db-exercice-select");
+  const indSelect = document.getElementById("db-indicateur-select");
+  const chartEmpty = document.getElementById("db-chart-empty");
+  const chartMeta = document.getElementById("db-chart-meta");
+  const chartWrap = document.getElementById("db-chart-wrap");
+  const chartTitle = document.getElementById("db-chart-title");
+  const chartPr = document.getElementById("db-chart-pr");
+  const canvas = document.getElementById("db-progression-chart");
+  let chart = null;
+
+  function showEmpty(msg) {
+    chartEmpty.querySelector("p").textContent = msg || "Sélectionne un exercice.";
+    chartEmpty.hidden = false;
+    chartMeta.hidden = true;
+    chartWrap.hidden = true;
+  }
+
+  async function loadData() {
+    const id = exSelect.value;
+    const ind = indSelect.value;
+    if (!id) { showEmpty(); return; }
+    const res = await fetch(`{% url 'workouts:progression_data' %}?exercice_id=${id}&indicateur=${ind}`);
+    const data = await res.json();
+    if (!data.ok || data.labels.length === 0) { showEmpty("Aucune donnée pour cet exercice."); return; }
+    chartEmpty.hidden = true;
+    chartMeta.hidden = false;
+    chartWrap.hidden = false;
+    chartTitle.textContent = data.exercice_nom;
+    chartPr.textContent = data.pr ? `PR : ${data.pr} ${data.unite}` : "";
+    const grad = canvas.getContext("2d").createLinearGradient(0, 0, 0, 260);
+    grad.addColorStop(0, "rgba(37,99,235,0.18)");
+    grad.addColorStop(1, "rgba(37,99,235,0)");
+    const datasets = [{
+      label: data.unite, data: data.values,
+      borderColor: "#2563eb", backgroundColor: grad,
+      borderWidth: 3, pointBackgroundColor: "#2563eb",
+      pointRadius: 5, pointHoverRadius: 7, fill: true, tension: 0.35,
+    }];
+    if (data.pr) datasets.push({
+      type: "line", label: "PR", data: data.labels.map(() => data.pr),
+      borderColor: "#93c5fd", borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
+    });
+    if (chart) chart.destroy();
+    chart = new Chart(canvas, {
+      type: "line",
+      data: { labels: data.labels, datasets },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } },
+        },
+        scales: {
+          x: { grid: { color: "#e2e8f0" }, ticks: { color: "#94a3b8", maxTicksLimit: 6 } },
+          y: { grid: { color: "#e2e8f0" }, ticks: { color: "#94a3b8", callback: v => `${v} kg` } },
+        },
+      },
+    });
+  }
+
+  exSelect.addEventListener("change", loadData);
+  indSelect.addEventListener("change", loadData);
+
+  // Pré-sélection au chargement : Hip Thrust barre (ou premier exercice), tonnage
+  const hipThrust = Array.from(exSelect.options).find(o => o.text.toLowerCase().includes("hip thrust"));
+  exSelect.value = hipThrust ? hipThrust.value : (exSelect.options[1]?.value || "");
+  indSelect.value = "tonnage";
+  if (exSelect.value) loadData();
+</script>
 {% endblock %}

@@ -13,14 +13,17 @@
   <div class="dev-banner">⚠ DEV — base de données de test, pas la prod</div>
   {% endif %}
   <header class="topbar">
-    <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
-    <nav>
-      <a href="{% url 'workouts:planifier_seance' %}">Planifier</a>
-      <a href="{% url 'workouts:historique' %}">Historique</a>
-      <a href="{% url 'workouts:mensurations' %}">Mensurations</a>
-      <a href="{% url 'workouts:backup_page' %}">Backup</a>
-      <a href="{% url 'admin:index' %}">Admin</a>
-    </nav>
+    <div class="topbar-inner">
+      <nav>
+        <a href="{% url 'workouts:planifier_seance' %}">Planifier</a>
+        <a href="{% url 'workouts:historique' %}">Historique</a>
+        <a href="{% url 'workouts:progression_page' %}">Progression</a>
+        <a href="{% url 'workouts:mensurations' %}">Mensurations</a>
+        <a href="{% url 'workouts:backup_page' %}">Backup</a>
+        <a href="{% url 'admin:index' %}">Admin</a>
+      </nav>
+      <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
+    </div>
   </header>
 
   <main class="page">

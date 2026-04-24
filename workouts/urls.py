@@ -27,4 +27,6 @@ urlpatterns = [
     path("backup/export/", views.export_backup, name="export_backup"),
     path("backup/export-sessions.csv", views.export_sessions_csv, name="export_sessions_csv"),
     path("backup/import/", views.import_backup, name="import_backup"),
+    path("progression/", views.progression_page, name="progression_page"),
+    path("progression/data/", views.progression_data, name="progression_data"),
 ]

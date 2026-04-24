@@ -27,6 +27,7 @@ from .services import (
     add_unplanned_session_line,
     complete_seance,
     create_seance_from_template,
+    progression_exercice,
     start_seance,
     update_exercise_order,
 )
@@ -78,6 +79,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         .select_related("seance_type")
         .order_by("-date", "-id")[:6]
     )
+    exercices = Exercice.objects.filter(actif=True).order_by("nom")
+    dernieres_mensurations = Mensuration.objects.order_by("-date")[:4]
     return render(
         request,
         "workouts/dashboard.html",
@@ -85,6 +88,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "seances_actives": seances_actives,
             "prochaines": prochaines,
             "recentes": recentes,
+            "exercices": exercices,
+            "dernieres_mensurations": dernieres_mensurations,
         },
     )
 
@@ -528,3 +533,35 @@ def import_backup(request: HttpRequest) -> HttpResponse:
         messages.error(request, f"Erreur lors de l'import : {exc}")
 
     return redirect("workouts:backup_page")
+
+
+# ── Progression ────────────────────────────────────────────────────────────────
+
+def progression_page(request: HttpRequest) -> HttpResponse:
+    exercices = Exercice.objects.filter(actif=True).order_by("nom")
+    return render(request, "workouts/progression.html", {"exercices": exercices})
+
+
+def progression_data(request: HttpRequest) -> JsonResponse:
+    try:
+        exercice_id = int(request.GET["exercice_id"])
+    except (KeyError, ValueError):
+        return JsonResponse({"ok": False, "errors": "exercice_id invalide"}, status=400)
+
+    indicateur = request.GET.get("indicateur", "1rm")
+    if indicateur not in ("1rm", "tonnage"):
+        indicateur = "1rm"
+
+    exercice = get_object_or_404(Exercice, pk=exercice_id)
+    points = progression_exercice(exercice_id, indicateur=indicateur)
+    pr = max((p["valeur"] for p in points), default=None)
+    unite = "kg (1RM estimé)" if indicateur == "1rm" else "kg (tonnage)"
+
+    return JsonResponse({
+        "ok": True,
+        "exercice_nom": exercice.nom,
+        "labels": [p["date"] for p in points],
+        "values": [p["valeur"] for p in points],
+        "pr": pr,
+        "unite": unite,
+    })

@@ -1,4 +1,5 @@
 {% extends "workouts/base.html" %}
+{% load workout_extras %}
 
 {% block title %}Historique{% endblock %}
 
@@ -16,7 +17,7 @@
     <a class="history-row" href="{% url 'workouts:seance_detail' seance.pk %}">
       <span>
         <strong>{{ seance }}</strong>
-        <small>{{ seance.lignes.count }} series / {{ seance.duration|default:"duree -" }}</small>
+        <small>{{ seance.lignes.count }} series / {{ seance.duration|format_duration }}</small>
       </span>
       <span>{{ seance.date|date:"d/m/Y" }}</span>
     </a>

@@ -10,6 +10,44 @@ from django.utils import timezone
 
 from .models import Exercice, Seance, SeanceType, SessionLigne, StatutSeance, TemplateLigne
 
+
+def progression_exercice(exercice_id: int, indicateur: str = "1rm") -> list[dict]:
+    """Retourne une valeur par séance pour un exercice.
+
+    indicateur='1rm'     → 1RM Epley estimé (meilleure série)
+    indicateur='tonnage' → somme charge×reps de toutes les séries validées
+    """
+    lignes = (
+        SessionLigne.objects
+        .filter(
+            exercice_id=exercice_id,
+            seance__statut=StatutSeance.COMPLETED,
+            charge_reelle__isnull=False,
+            repetitions_reelles__isnull=False,
+            repetitions_reelles__gt=0,
+        )
+        .select_related("seance")
+        .order_by("seance__date", "seance__id")
+        .values("seance__date", "charge_reelle", "repetitions_reelles")
+    )
+
+    sessions: dict[datetime.date, float] = {}
+    for ligne in lignes:
+        d = ligne["seance__date"]
+        charge = float(ligne["charge_reelle"])
+        reps = ligne["repetitions_reelles"]
+        if indicateur == "tonnage":
+            sessions[d] = sessions.get(d, 0.0) + charge * reps
+        else:
+            one_rm = charge * (1 + reps / 30)
+            if d not in sessions or one_rm > sessions[d]:
+                sessions[d] = one_rm
+
+    return [
+        {"date": d.strftime("%d/%m/%Y"), "valeur": round(v, 1)}
+        for d, v in sorted(sessions.items())
+    ]
+
 logger = logging.getLogger("workouts.services")
 
 
