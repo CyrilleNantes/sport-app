@@ -141,7 +141,7 @@
     }];
     if (data.pr) datasets.push({
       type: "line", label: "PR", data: data.labels.map(() => data.pr),
-      borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
+      borderColor: "#93c5fd", borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
     });
     if (chart) chart.destroy();
     chart = new Chart(canvas, {
@@ -154,8 +154,8 @@
           tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } },
         },
         scales: {
-          x: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064", maxTicksLimit: 6 } },
-          y: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064", callback: v => `${v} kg` } },
+          x: { grid: { color: "#e2e8f0" }, ticks: { color: "#94a3b8", maxTicksLimit: 6 } },
+          y: { grid: { color: "#e2e8f0" }, ticks: { color: "#94a3b8", callback: v => `${v} kg` } },
         },
       },
     });

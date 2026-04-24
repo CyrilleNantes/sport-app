@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --bg: #f8fafc;
+  --bg: #f7f8fa;
   --surface: #ffffff;
   --ink: #0f172a;
   --muted: #64748b;
@@ -213,7 +213,8 @@ h2 {
 
 .session-row:hover,
 .history-row:hover {
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(37,99,235,0.10);
   transform: translateY(-1px);
 }
 
