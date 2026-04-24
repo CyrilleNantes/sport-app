@@ -1,7 +1,7 @@
 # Spécifications Fonctionnelles — Sport App
 
 > Document vivant — mis à jour par l'IA après chaque implémentation validée.
-> Dernière mise à jour : 2026-04-23
+> Dernière mise à jour : 2026-04-24
 
 ---
 
@@ -404,7 +404,7 @@ Toutes les séances (tous statuts) avec leurs `SessionLigne`. Séparateur virgul
 
 **Export ZIP** (`GET /backup/export/`) : ZIP en mémoire (`io.BytesIO`) contenant 6 fichiers JSON — `exercices.json`, `seance_types.json`, `mensurations.json`, `template_lignes.json`, `seances.json`, `session_lignes.json`. Sérialisation Django native, compression `ZIP_DEFLATED`.
 
-**Import** (`POST /backup/import/`) : transaction atomique. Suppression dans l'ordre inverse des FK, réimport dans l'ordre des FK. Rollback complet si exception. Confirmation via `<dialog>` HTML natif côté client avant soumission.
+**Import** (`POST /backup/import/`) : transaction atomique. Suppression dans l'ordre inverse des FK, réimport dans l'ordre des FK, puis resynchronisation des séquences PostgreSQL via `sqlsequencereset` (évite les `IntegrityError` sur les IDs après import de données prod). Rollback complet si exception. Confirmation via `<dialog>` HTML natif côté client avant soumission.
 
 **Export CSV lisible** (`GET /backup/export-sessions.csv`) : séances `COMPLETED` uniquement, séparateur `;`, UTF-8 avec BOM pour Excel.
 
