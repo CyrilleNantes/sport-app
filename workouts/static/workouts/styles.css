@@ -559,8 +559,8 @@ textarea {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1.8fr;
-  gap: 2rem;
+  grid-template-columns: 3fr 7fr;
+  gap: 2.5rem;
   align-items: start;
 }
 
