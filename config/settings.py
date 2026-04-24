@@ -12,6 +12,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "fallback-insecure-key")
 # DEBUG piloté par variable d'env
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
+# "dev" sur le projet Railway de dev, absent (= "production") sur le prod
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+
 # Domaine Railway (à adapter si besoin)
 RAILWAY_DOMAIN = os.getenv(
     "RAILWAY_PUBLIC_DOMAIN",
@@ -62,6 +65,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "workouts.context_processors.environment",
             ],
         },
     },
