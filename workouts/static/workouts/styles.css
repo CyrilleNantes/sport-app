@@ -560,17 +560,17 @@ textarea {
 .dashboard-grid {
   display: grid;
   grid-template-columns: 3fr 7fr;
+  grid-template-rows: auto auto auto;
   column-gap: 2.5rem;
+  row-gap: 2rem;
   align-items: start;
 }
 
-.db-left,
-.db-right {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  min-width: 0;
-}
+.db-encours     { grid-column: 1; grid-row: 1; }
+.db-planifiees  { grid-column: 1; grid-row: 2; }
+.db-recentes    { grid-column: 1; grid-row: 3; }
+.db-progression { grid-column: 2; grid-row: 1 / span 2; }
+.db-mensurations{ grid-column: 2; grid-row: 3; }
 
 .mensuration-card {
   display: block;
@@ -621,7 +621,13 @@ textarea {
 @media (max-width: 720px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: unset;
   }
+  .db-encours     { grid-column: 1; grid-row: 1; }
+  .db-planifiees  { grid-column: 1; grid-row: 3; }
+  .db-progression { grid-column: 1; grid-row: 4; }
+  .db-mensurations{ grid-column: 1; grid-row: 5; }
+  .db-recentes    { grid-column: 1; grid-row: 6; }
 }
 
 /* ── Progression ──────────────────────────────────────────── */
