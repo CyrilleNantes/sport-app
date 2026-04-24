@@ -9,7 +9,8 @@ from itertools import groupby
 
 from django.contrib import messages
 from django.core import serializers as django_serializers
-from django.db import transaction
+from django.core.management import call_command
+from django.db import connection, transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -510,6 +511,15 @@ def import_backup(request: HttpRequest) -> HttpResponse:
                     data = zf.read(filename).decode("utf-8")
                     for obj in django_serializers.deserialize("json", data):
                         obj.save()
+
+            # Resync séquences PostgreSQL après import avec IDs explicites
+            from io import StringIO
+            buf = StringIO()
+            call_command("sqlsequencereset", "workouts", stdout=buf, no_color=True)
+            sql = buf.getvalue()
+            if sql:
+                with connection.cursor() as cursor:
+                    cursor.execute(sql)
 
         logger.info("Backup importé avec succès")
         messages.success(request, "Import réussi — toutes les données ont été restaurées.")
