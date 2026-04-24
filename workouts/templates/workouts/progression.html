@@ -1,0 +1,129 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Progression — Sport app{% endblock %}
+
+{% block content %}
+<div class="progression-header">
+  <h1>Progression</h1>
+  <select id="exercice-select" class="exercice-select">
+    <option value="">— Choisir un exercice —</option>
+    {% for ex in exercices %}
+      <option value="{{ ex.pk }}">{{ ex.nom }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="chart-card" id="chart-card">
+  <div class="chart-empty" id="chart-empty">
+    <p>Sélectionne un exercice pour afficher sa progression.</p>
+  </div>
+  <div class="chart-meta" id="chart-meta" hidden>
+    <span class="chart-title" id="chart-title"></span>
+    <span class="chart-pr" id="chart-pr"></span>
+  </div>
+  <div class="chart-wrap" id="chart-wrap" hidden>
+    <canvas id="progression-chart"></canvas>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const select = document.getElementById("exercice-select");
+  const chartEmpty = document.getElementById("chart-empty");
+  const chartMeta = document.getElementById("chart-meta");
+  const chartWrap = document.getElementById("chart-wrap");
+  const chartTitle = document.getElementById("chart-title");
+  const chartPr = document.getElementById("chart-pr");
+  const canvas = document.getElementById("progression-chart");
+
+  let chart = null;
+
+  select.addEventListener("change", () => {
+    const id = select.value;
+    if (!id) {
+      showEmpty();
+      return;
+    }
+    loadData(id);
+  });
+
+  function showEmpty() {
+    chartEmpty.hidden = false;
+    chartMeta.hidden = true;
+    chartWrap.hidden = true;
+  }
+
+  async function loadData(exerciceId) {
+    const res = await fetch(`{% url 'workouts:progression_data' %}?exercice_id=${exerciceId}`);
+    const data = await res.json();
+
+    if (!data.ok || data.labels.length === 0) {
+      chartEmpty.textContent = "Aucune donnée pour cet exercice.";
+      chartEmpty.hidden = false;
+      chartMeta.hidden = true;
+      chartWrap.hidden = true;
+      return;
+    }
+
+    chartEmpty.hidden = true;
+    chartMeta.hidden = false;
+    chartWrap.hidden = false;
+
+    chartTitle.textContent = data.exercice_nom;
+    chartPr.textContent = data.pr ? `PR : ${data.pr} kg (1RM estimé)` : "";
+
+    renderChart(data);
+  }
+
+  function renderChart(data) {
+    const prLine = data.pr
+      ? { type: "line", label: "PR", data: data.labels.map(() => data.pr),
+          borderColor: "#d74c2f", borderDash: [6, 4], borderWidth: 1.5,
+          pointRadius: 0, fill: false }
+      : null;
+
+    const datasets = [
+      {
+        label: "1RM estimé (kg)",
+        data: data.values,
+        borderColor: "#147d64",
+        backgroundColor: "rgba(20,125,100,0.08)",
+        borderWidth: 2.5,
+        pointBackgroundColor: "#147d64",
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.3,
+      },
+    ];
+    if (prLine) datasets.push(prLine);
+
+    if (chart) chart.destroy();
+    chart = new Chart(canvas, {
+      type: "line",
+      data: { labels: data.labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.parsed.y} kg`,
+            },
+          },
+        },
+        scales: {
+          x: { grid: { color: "#dfe5dc" }, ticks: { color: "#667064" } },
+          y: {
+            grid: { color: "#dfe5dc" },
+            ticks: { color: "#667064", callback: v => `${v} kg` },
+          },
+        },
+      },
+    });
+  }
+</script>
+{% endblock %}

@@ -27,6 +27,7 @@ from .services import (
     add_unplanned_session_line,
     complete_seance,
     create_seance_from_template,
+    progression_exercice,
     start_seance,
     update_exercise_order,
 )
@@ -528,3 +529,29 @@ def import_backup(request: HttpRequest) -> HttpResponse:
         messages.error(request, f"Erreur lors de l'import : {exc}")
 
     return redirect("workouts:backup_page")
+
+
+# ── Progression ────────────────────────────────────────────────────────────────
+
+def progression_page(request: HttpRequest) -> HttpResponse:
+    exercices = Exercice.objects.filter(actif=True).order_by("nom")
+    return render(request, "workouts/progression.html", {"exercices": exercices})
+
+
+def progression_data(request: HttpRequest) -> JsonResponse:
+    try:
+        exercice_id = int(request.GET["exercice_id"])
+    except (KeyError, ValueError):
+        return JsonResponse({"ok": False, "errors": "exercice_id invalide"}, status=400)
+
+    exercice = get_object_or_404(Exercice, pk=exercice_id)
+    points = progression_exercice(exercice_id)
+    pr = max((p["one_rm"] for p in points), default=None)
+
+    return JsonResponse({
+        "ok": True,
+        "exercice_nom": exercice.nom,
+        "labels": [p["date"] for p in points],
+        "values": [p["one_rm"] for p in points],
+        "pr": pr,
+    })
