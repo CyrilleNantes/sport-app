@@ -1,13 +1,14 @@
 :root {
   color-scheme: light;
-  --bg: #f6f7f4;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --ink: #17211a;
-  --muted: #667064;
-  --line: #dfe5dc;
-  --primary: #147d64;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
   --accent: #d74c2f;
-  --ok-bg: #e6f5ef;
+  --ok-bg: #eff6ff;
   --warn-bg: #fff3da;
 }
 
@@ -40,7 +41,12 @@ h1 {
 }
 
 h2 {
-  font-size: 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
 }
 
 .dev-banner {
@@ -57,7 +63,9 @@ h2 {
 }
 
 .topbar {
-  background: rgba(246, 247, 244, 0.92);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
@@ -135,7 +143,8 @@ h2 {
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   padding: 1.25rem;
 }
 
@@ -164,6 +173,12 @@ h2 {
   background: var(--primary);
   border-color: var(--primary);
   color: white;
+  transition: background 0.15s ease;
+}
+
+.button.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .button.compact {
@@ -187,11 +202,19 @@ h2 {
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   display: flex;
   justify-content: space-between;
   min-height: 64px;
   padding: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.session-row:hover,
+.history-row:hover {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
 }
 
 .session-row.active {
@@ -666,6 +689,7 @@ textarea {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   padding: 1.5rem;
 }
 

@@ -80,7 +80,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         .order_by("-date", "-id")[:6]
     )
     exercices = Exercice.objects.filter(actif=True).order_by("nom")
-    derniere_mensuration = Mensuration.objects.order_by("-date").first()
+    dernieres_mensurations = Mensuration.objects.order_by("-date")[:4]
     return render(
         request,
         "workouts/dashboard.html",
@@ -89,7 +89,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "prochaines": prochaines,
             "recentes": recentes,
             "exercices": exercices,
-            "derniere_mensuration": derniere_mensuration,
+            "dernieres_mensurations": dernieres_mensurations,
         },
     )
 

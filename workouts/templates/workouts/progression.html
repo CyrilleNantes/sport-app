@@ -70,17 +70,20 @@
     chartTitle.textContent = data.exercice_nom;
     chartPr.textContent = data.pr ? `PR : ${data.pr} ${data.unite}` : "";
 
+    const grad = canvas.getContext("2d").createLinearGradient(0, 0, 0, 300);
+    grad.addColorStop(0, "rgba(37,99,235,0.18)");
+    grad.addColorStop(1, "rgba(37,99,235,0)");
     const datasets = [{
       label: data.unite,
       data: data.values,
-      borderColor: "#147d64",
-      backgroundColor: "rgba(20,125,100,0.08)",
-      borderWidth: 2.5,
-      pointBackgroundColor: "#147d64",
-      pointRadius: 4,
-      pointHoverRadius: 6,
+      borderColor: "#2563eb",
+      backgroundColor: grad,
+      borderWidth: 3,
+      pointBackgroundColor: "#2563eb",
+      pointRadius: 5,
+      pointHoverRadius: 7,
       fill: true,
-      tension: 0.3,
+      tension: 0.35,
     }];
 
     if (data.pr) datasets.push({

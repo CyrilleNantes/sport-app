@@ -74,20 +74,24 @@
     </div>
   </div>
 
-  {% if derniere_mensuration %}
+  {% if dernieres_mensurations %}
   <div class="db-mensurations">
     <h2>Dernieres Mensurations</h2>
-    <a class="mensuration-card" href="{% url 'workouts:mensurations' %}">
-      <span class="mensuration-date">{{ derniere_mensuration.date|date:"d/m/Y" }}</span>
-      <div class="mensuration-row">
-        {% if derniere_mensuration.poids %}<span><strong>{{ derniere_mensuration.poids }} kg</strong><em>Poids</em></span>{% endif %}
-        {% if derniere_mensuration.masse_grasse %}<span><strong>{{ derniere_mensuration.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
-        {% if derniere_mensuration.tour_taille %}<span><strong>{{ derniere_mensuration.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
-        {% if derniere_mensuration.tour_hanches %}<span><strong>{{ derniere_mensuration.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
-        {% if derniere_mensuration.tour_bras %}<span><strong>{{ derniere_mensuration.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}
-        {% if derniere_mensuration.tour_cuisse %}<span><strong>{{ derniere_mensuration.tour_cuisse }} cm</strong><em>Cuisse</em></span>{% endif %}
-      </div>
-    </a>
+    <div class="stack">
+      {% for m in dernieres_mensurations %}
+      <a class="mensuration-card" href="{% url 'workouts:mensurations' %}">
+        <span class="mensuration-date">{{ m.date|date:"d/m/Y" }}</span>
+        <div class="mensuration-row">
+          {% if m.poids %}<span><strong>{{ m.poids }} kg</strong><em>Poids</em></span>{% endif %}
+          {% if m.masse_grasse %}<span><strong>{{ m.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
+          {% if m.tour_taille %}<span><strong>{{ m.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
+          {% if m.tour_hanches %}<span><strong>{{ m.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
+          {% if m.tour_bras %}<span><strong>{{ m.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}
+          {% if m.tour_cuisse %}<span><strong>{{ m.tour_cuisse }} cm</strong><em>Cuisse</em></span>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
   </div>
   {% endif %}
 
@@ -126,11 +130,14 @@
     chartWrap.hidden = false;
     chartTitle.textContent = data.exercice_nom;
     chartPr.textContent = data.pr ? `PR : ${data.pr} ${data.unite}` : "";
+    const grad = canvas.getContext("2d").createLinearGradient(0, 0, 0, 260);
+    grad.addColorStop(0, "rgba(37,99,235,0.18)");
+    grad.addColorStop(1, "rgba(37,99,235,0)");
     const datasets = [{
       label: data.unite, data: data.values,
-      borderColor: "#147d64", backgroundColor: "rgba(20,125,100,0.08)",
-      borderWidth: 2.5, pointBackgroundColor: "#147d64",
-      pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.3,
+      borderColor: "#2563eb", backgroundColor: grad,
+      borderWidth: 3, pointBackgroundColor: "#2563eb",
+      pointRadius: 5, pointHoverRadius: 7, fill: true, tension: 0.35,
     }];
     if (data.pr) datasets.push({
       type: "line", label: "PR", data: data.labels.map(() => data.pr),
