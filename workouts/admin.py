@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Exercice, Seance, SeanceType, SessionLigne, TemplateLigne
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, TemplateLigne
 from .services import copy_template_lines_to_seance
 
 
@@ -59,6 +59,13 @@ class TemplateLigneAdmin(admin.ModelAdmin):
     )
     list_filter = ("seance_type", "exercice")
     autocomplete_fields = ("seance_type", "exercice")
+
+
+@admin.register(Mensuration)
+class MensurationAdmin(admin.ModelAdmin):
+    list_display = ("date", "poids", "tour_taille", "tour_poitrine", "tour_bras", "masse_grasse")
+    list_filter = ("date",)
+    ordering = ("-date",)
 
 
 @admin.register(SessionLigne)

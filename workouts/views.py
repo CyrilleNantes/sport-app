@@ -1,21 +1,27 @@
 from __future__ import annotations
 
 import csv
+import io
 import logging
+import zipfile
+from datetime import date
 from itertools import groupby
 
 from django.contrib import messages
+from django.core import serializers as django_serializers
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import (
     AddSessionLineForm,
+    MensurationForm,
     SeanceNotesForm,
     SeancePlanificationForm,
     SessionLigneQuickForm,
 )
-from .models import Seance, SessionLigne, StatutSeance
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, StatutSeance, TemplateLigne
 from .services import (
     add_unplanned_session_line,
     complete_seance,
@@ -315,3 +321,200 @@ def export_csv(request: HttpRequest) -> HttpResponse:
 
     logger.info("Export CSV : %s lignes exportées", row_count)
     return response
+
+
+# ── Mensurations ───────────────────────────────────────────────────────────────
+
+# Champs mesurés — ordre d'affichage
+_MENSURATION_CHAMPS: list[tuple[str, str, str]] = [
+    ("poids",         "Poids",    "kg"),
+    ("tour_poitrine", "Poitrine", "cm"),
+    ("tour_taille",   "Taille",   "cm"),
+    ("tour_hanches",  "Hanches",  "cm"),
+    ("tour_bras",     "Bras",     "cm"),
+    ("tour_cuisse",   "Cuisse",   "cm"),
+    ("masse_grasse",  "MG",       "%"),
+]
+
+
+def _build_mensuration_rows(entries: list[Mensuration]) -> list[dict]:
+    """Associe chaque entrée à ses deltas par rapport à la précédente."""
+    rows = []
+    for i, entry in enumerate(entries):
+        prev = entries[i + 1] if i + 1 < len(entries) else None
+        cells = []
+        for field, label, unit in _MENSURATION_CHAMPS:
+            value = getattr(entry, field)
+            prev_value = getattr(prev, field) if prev else None
+            delta = (value - prev_value) if (value is not None and prev_value is not None) else None
+            cells.append({"field": field, "label": label, "unit": unit, "value": value, "delta": delta})
+        rows.append({"entry": entry, "cells": cells})
+    return rows
+
+
+def mensurations(request: HttpRequest) -> HttpResponse:
+    entries = list(Mensuration.objects.all())
+    return render(request, "workouts/mensurations.html", {
+        "rows": _build_mensuration_rows(entries),
+        "champs": _MENSURATION_CHAMPS,
+    })
+
+
+def ajouter_mensuration(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = MensurationForm(request.POST)
+        if form.is_valid():
+            m = form.save()
+            logger.info("Mensuration ajoutée : pk=%s date=%s", m.pk, m.date)
+            messages.success(request, "Mensurations enregistrées.")
+            return redirect("workouts:mensurations")
+    else:
+        form = MensurationForm(initial={"date": date.today()})
+    return render(request, "workouts/mensuration_form.html", {"form": form, "titre": "Nouvelle saisie"})
+
+
+def modifier_mensuration(request: HttpRequest, pk: int) -> HttpResponse:
+    mensuration = get_object_or_404(Mensuration, pk=pk)
+    if request.method == "POST":
+        form = MensurationForm(request.POST, instance=mensuration)
+        if form.is_valid():
+            form.save()
+            logger.info("Mensuration modifiée : pk=%s date=%s", mensuration.pk, mensuration.date)
+            messages.success(request, "Mensurations modifiées.")
+            return redirect("workouts:mensurations")
+    else:
+        form = MensurationForm(instance=mensuration)
+    return render(request, "workouts/mensuration_form.html", {
+        "form": form,
+        "titre": "Modifier",
+        "mensuration": mensuration,
+    })
+
+
+# ── Backup / Restore ───────────────────────────────────────────────────────────
+
+# Ordre d'export et d'import (respecte les dépendances FK)
+_BACKUP_MODELS: list[tuple[str, type]] = [
+    ("exercices",      Exercice),
+    ("seance_types",   SeanceType),
+    ("mensurations",   Mensuration),
+    ("template_lignes", TemplateLigne),
+    ("seances",        Seance),
+    ("session_lignes", SessionLigne),
+]
+
+
+def backup_page(request: HttpRequest) -> HttpResponse:
+    return render(request, "workouts/backup.html")
+
+
+def export_backup(request: HttpRequest) -> HttpResponse:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name, model in _BACKUP_MODELS:
+            data = django_serializers.serialize("json", model.objects.all(), indent=2)
+            zf.writestr(f"{name}.json", data)
+
+    buffer.seek(0)
+    filename = f"sport_backup_{date.today().isoformat()}.zip"
+    response = HttpResponse(buffer.read(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    logger.info("Backup exporté : %s", filename)
+    return response
+
+
+def export_sessions_csv(request: HttpRequest) -> HttpResponse:
+    """Export lisible des séances terminées — une ligne par série."""
+    response = HttpResponse(
+        content_type="text/csv; charset=utf-8-sig",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="sessions_{date.today().isoformat()}.csv"'
+    )
+    # utf-8-sig = UTF-8 avec BOM pour que Excel ouvre correctement les accents
+    response.write("\ufeff")
+
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow([
+        "Date",
+        "Type",
+        "Ordre",
+        "Exercice",
+        "Série",
+        "Répétitions cibles",
+        "Charge cible (kg)",
+        "Repos (sec)",
+        "RPE Cible",
+        "Tempo",
+        "Charge réelle (kg)",
+        "Reps réelles",
+        "RPE réel (0-10)",
+    ])
+
+    lignes = (
+        SessionLigne.objects
+        .filter(seance__statut=StatutSeance.COMPLETED)
+        .select_related("seance", "seance__seance_type", "exercice")
+        .order_by("seance__date", "seance_id", "ordre_prevu", "numero_serie")
+    )
+
+    row_count = 0
+    for ligne in lignes:
+        writer.writerow([
+            ligne.seance.date.strftime("%d/%m/%Y"),
+            ligne.seance.seance_type.nom if ligne.seance.seance_type else "",
+            ligne.ordre_prevu,
+            ligne.exercice.nom,
+            f"S{ligne.numero_serie}",
+            ligne.repetitions_cible if ligne.repetitions_cible is not None else "",
+            ligne.charge_cible if ligne.charge_cible is not None else "",
+            ligne.repos_secondes if ligne.repos_secondes is not None else "",
+            ligne.rpe_cible if ligne.rpe_cible is not None else "",
+            ligne.tempo or "",
+            ligne.charge_reelle if ligne.charge_reelle is not None else "",
+            ligne.repetitions_reelles if ligne.repetitions_reelles is not None else "",
+            ligne.rpe_reel if ligne.rpe_reel is not None else "",
+        ])
+        row_count += 1
+
+    logger.info("Export sessions CSV : %s lignes exportées", row_count)
+    return response
+
+
+@require_POST
+def import_backup(request: HttpRequest) -> HttpResponse:
+    zip_file = request.FILES.get("backup_file")
+    if not zip_file:
+        messages.error(request, "Aucun fichier sélectionné.")
+        return redirect("workouts:backup_page")
+
+    if not zipfile.is_zipfile(zip_file):
+        messages.error(request, "Le fichier n'est pas un zip valide.")
+        return redirect("workouts:backup_page")
+
+    try:
+        with transaction.atomic():
+            # Suppression dans l'ordre inverse des FK
+            for name, model in reversed(_BACKUP_MODELS):
+                model.objects.all().delete()
+
+            # Réimport dans l'ordre des FK
+            zip_file.seek(0)
+            with zipfile.ZipFile(zip_file) as zf:
+                available = zf.namelist()
+                for name, _model in _BACKUP_MODELS:
+                    filename = f"{name}.json"
+                    if filename not in available:
+                        logger.warning("Fichier manquant dans le zip : %s", filename)
+                        continue
+                    data = zf.read(filename).decode("utf-8")
+                    for obj in django_serializers.deserialize("json", data):
+                        obj.save()
+
+        logger.info("Backup importé avec succès")
+        messages.success(request, "Import réussi — toutes les données ont été restaurées.")
+    except Exception as exc:
+        logger.exception("Échec de l'import backup : %s", exc)
+        messages.error(request, f"Erreur lors de l'import : {exc}")
+
+    return redirect("workouts:backup_page")

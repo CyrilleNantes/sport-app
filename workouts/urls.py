@@ -20,4 +20,11 @@ urlpatterns = [
     path("lignes/<int:pk>/", views.update_ligne, name="update_ligne"),
     path("historique/", views.historique, name="historique"),
     path("historique/export.csv", views.export_csv, name="export_csv"),
+    path("mensurations/", views.mensurations, name="mensurations"),
+    path("mensurations/ajouter/", views.ajouter_mensuration, name="ajouter_mensuration"),
+    path("mensurations/<int:pk>/modifier/", views.modifier_mensuration, name="modifier_mensuration"),
+    path("backup/", views.backup_page, name="backup_page"),
+    path("backup/export/", views.export_backup, name="export_backup"),
+    path("backup/export-sessions.csv", views.export_sessions_csv, name="export_sessions_csv"),
+    path("backup/import/", views.import_backup, name="import_backup"),
 ]
