@@ -61,12 +61,6 @@ def connexion(request: HttpRequest) -> HttpResponse:
         username = request.POST.get("username", "").strip().lower()
         password = request.POST.get("password", "")
         user = authenticate(request, username=username, password=password)
-        logger.info(
-            "CONNEXION POST champs reçus=%s username=%r authenticate=%s",
-            list(request.POST.keys()),
-            username,
-            "OK" if user else "FAIL",
-        )
         if user is not None:
             login(request, user)
             next_url = request.GET.get("next", "")
