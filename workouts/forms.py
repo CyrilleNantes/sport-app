@@ -12,13 +12,24 @@ User = get_user_model()
 class InscriptionForm(forms.Form):
     prenom = forms.CharField(max_length=50, label="Prénom")
     nom = forms.CharField(max_length=50, label="Nom")
-    email = forms.EmailField(label="Adresse email")
+    username = forms.CharField(
+        max_length=150,
+        label="Identifiant de connexion",
+        help_text="Lettres, chiffres et . @ + - _ uniquement.",
+    )
+    email = forms.EmailField(label="Adresse email", required=False)
     password1 = forms.CharField(label="Mot de passe", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirmer le mot de passe", widget=forms.PasswordInput)
 
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip().lower()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("Cet identifiant est déjà utilisé.")
+        return username
+
     def clean_email(self):
-        email = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
+        email = self.cleaned_data.get("email", "").strip().lower()
+        if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Un compte existe déjà avec cet email.")
         return email
 

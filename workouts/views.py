@@ -57,14 +57,14 @@ def connexion(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("workouts:dashboard")
     if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
+        username = request.POST.get("username", "").strip().lower()
         password = request.POST.get("password", "")
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             next_url = request.GET.get("next", "")
             return redirect(next_url or "workouts:dashboard")
-        messages.error(request, "Email ou mot de passe incorrect.")
+        messages.error(request, "Identifiant ou mot de passe incorrect.")
     return render(request, "workouts/auth/connexion.html")
 
 
@@ -74,9 +74,10 @@ def inscription(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = InscriptionForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            username = form.cleaned_data["username"]
+            email = form.cleaned_data.get("email", "")
             user = User.objects.create_user(
-                username=email,
+                username=username,
                 email=email,
                 password=form.cleaned_data["password1"],
                 first_name=form.cleaned_data["prenom"],
