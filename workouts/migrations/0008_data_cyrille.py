@@ -12,7 +12,7 @@ def create_cyrille_and_assign_data(apps, schema_editor):
     user, created = User.objects.get_or_create(
         email="cyrille.limousin@gmail.com",
         defaults={
-            "username": "cyrille.limousin@gmail.com",
+            "username": "cyrille",
             "first_name": "Cyrille",
             "last_name": "Limousin",
             "password": make_password("Cyrille"),

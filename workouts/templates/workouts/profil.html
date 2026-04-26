@@ -28,10 +28,25 @@
   </div>
 
   <div class="panel">
-    <h2 style="margin-bottom:1rem">Sécurité</h2>
-    <p class="muted" style="font-size:0.9rem;margin:0">
-      Pour modifier votre mot de passe ou vos informations, contactez l'administrateur ou utilisez <a href="{% url 'admin:index' %}">l'interface admin</a>.
-    </p>
+    <h2 style="margin-bottom:1rem">Changer le mot de passe</h2>
+    <form method="post" action="{% url 'workouts:changer_mot_de_passe' %}" class="stack">
+      {% csrf_token %}
+      <label>
+        {{ pwd_form.ancien.label }}
+        {{ pwd_form.ancien }}
+      </label>
+      <label>
+        {{ pwd_form.nouveau1.label }}
+        {{ pwd_form.nouveau1 }}
+      </label>
+      <label>
+        {{ pwd_form.nouveau2.label }}
+        {{ pwd_form.nouveau2 }}
+      </label>
+      <div>
+        <button class="button primary" type="submit">Modifier le mot de passe</button>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock %}

@@ -8,7 +8,7 @@ from datetime import date
 from itertools import groupby
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth import authenticate, get_user_model, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core import serializers as django_serializers
 from django.core.management import call_command
@@ -19,6 +19,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     AddSessionLineForm,
+    ChangerMotDePasseForm,
     ExerciceForm,
     InscriptionForm,
     MensurationForm,
@@ -57,14 +58,14 @@ def connexion(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("workouts:dashboard")
     if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
+        username = request.POST.get("username", "").strip().lower()
         password = request.POST.get("password", "")
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             next_url = request.GET.get("next", "")
             return redirect(next_url or "workouts:dashboard")
-        messages.error(request, "Email ou mot de passe incorrect.")
+        messages.error(request, "Identifiant ou mot de passe incorrect.")
     return render(request, "workouts/auth/connexion.html")
 
 
@@ -74,9 +75,10 @@ def inscription(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = InscriptionForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            username = form.cleaned_data["username"]
+            email = form.cleaned_data.get("email", "")
             user = User.objects.create_user(
-                username=email,
+                username=username,
                 email=email,
                 password=form.cleaned_data["password1"],
                 first_name=form.cleaned_data["prenom"],
@@ -115,8 +117,26 @@ def profil(request: HttpRequest) -> HttpResponse:
         {
             "nb_seances": nb_seances,
             "derniere_seance": derniere,
+            "pwd_form": ChangerMotDePasseForm(user=request.user),
         },
     )
+
+
+@require_POST
+@login_required
+def changer_mot_de_passe(request: HttpRequest) -> HttpResponse:
+    form = ChangerMotDePasseForm(request.POST, user=request.user)
+    if form.is_valid():
+        request.user.set_password(form.cleaned_data["nouveau1"])
+        request.user.save(update_fields=["password"])
+        update_session_auth_hash(request, request.user)  # garde la session active
+        messages.success(request, "Mot de passe modifié avec succès.")
+        logger.info("Mot de passe changé pour user pk=%s", request.user.pk)
+    else:
+        for field_errors in form.errors.values():
+            for error in field_errors:
+                messages.error(request, error)
+    return redirect("workouts:profil")
 
 
 # ── Dashboard ────────────────────────────────────────────────────────────────────

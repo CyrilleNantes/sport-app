@@ -12,13 +12,24 @@ User = get_user_model()
 class InscriptionForm(forms.Form):
     prenom = forms.CharField(max_length=50, label="Prénom")
     nom = forms.CharField(max_length=50, label="Nom")
-    email = forms.EmailField(label="Adresse email")
+    username = forms.CharField(
+        max_length=150,
+        label="Identifiant de connexion",
+        help_text="Lettres, chiffres et . @ + - _ uniquement.",
+    )
+    email = forms.EmailField(label="Adresse email", required=False)
     password1 = forms.CharField(label="Mot de passe", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirmer le mot de passe", widget=forms.PasswordInput)
 
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip().lower()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("Cet identifiant est déjà utilisé.")
+        return username
+
     def clean_email(self):
-        email = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
+        email = self.cleaned_data.get("email", "").strip().lower()
+        if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Un compte existe déjà avec cet email.")
         return email
 
@@ -28,6 +39,32 @@ class InscriptionForm(forms.Form):
         p2 = cleaned_data.get("password2")
         if p1 and p2 and p1 != p2:
             raise forms.ValidationError("Les mots de passe ne correspondent pas.")
+        return cleaned_data
+
+
+# ── Changement de mot de passe ────────────────────────────────────────────────────
+
+class ChangerMotDePasseForm(forms.Form):
+    ancien = forms.CharField(label="Mot de passe actuel", widget=forms.PasswordInput)
+    nouveau1 = forms.CharField(label="Nouveau mot de passe", widget=forms.PasswordInput)
+    nouveau2 = forms.CharField(label="Confirmer le nouveau mot de passe", widget=forms.PasswordInput)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_ancien(self):
+        ancien = self.cleaned_data["ancien"]
+        if self.user and not self.user.check_password(ancien):
+            raise forms.ValidationError("Mot de passe actuel incorrect.")
+        return ancien
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get("nouveau1")
+        p2 = cleaned_data.get("nouveau2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Les nouveaux mots de passe ne correspondent pas.")
         return cleaned_data
 
 

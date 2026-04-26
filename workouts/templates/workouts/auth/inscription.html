@@ -38,10 +38,17 @@
             </label>
           </div>
 
+          <label for="username">
+            Identifiant de connexion
+            <input type="text" id="username" name="username"
+                   value="{{ form.username.value|default:'' }}" required autocomplete="username">
+            {% if form.username.errors %}<span style="color:var(--accent);font-size:0.8rem">{{ form.username.errors|join:", " }}</span>{% endif %}
+          </label>
+
           <label for="email">
-            Email
+            Email <span style="color:var(--muted);font-weight:400;font-size:0.85rem">(optionnel)</span>
             <input type="email" id="email" name="email"
-                   value="{{ form.email.value|default:'' }}" required autocomplete="email">
+                   value="{{ form.email.value|default:'' }}" autocomplete="email">
           </label>
 
           <label for="password1">
