@@ -633,6 +633,114 @@ textarea {
   gap: 0.25rem;
 }
 
+/* ── Hub Planifier ───────────────────────────────────────── */
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 820px) {
+  .hub-grid { grid-template-columns: 1fr; }
+}
+
+.seance-type-row {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.seance-type-row:last-child { border-bottom: none; }
+
+.seance-type-meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 0.1rem;
+}
+
+.btn-icon {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-icon:hover { border-color: var(--primary); color: var(--primary); }
+.btn-icon.danger:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Formset TemplateLigne ────────────────────────────────── */
+
+.formset-wrap {
+  overflow-x: auto;
+}
+
+.formset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.formset-table th {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+
+.formset-table td {
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+}
+
+.formset-table tbody tr:hover td { background: #f9faff; }
+
+.formset-table input,
+.formset-table select {
+  min-height: 36px;
+  font-size: 0.88rem;
+}
+
+input.tl-xs, select.tl-xs { width: 58px; }
+input.tl-sm, select.tl-sm { width: 78px; }
+select.tl-exercice          { width: 200px; }
+
+.formset-delete-col { text-align: center; width: 36px; }
+.formset-delete-col input[type="checkbox"] { width: auto; min-height: unset; }
+
+.formset-add-btn {
+  background: none;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  transition: border-color 0.15s, color 0.15s;
+  width: 100%;
+}
+
+.formset-add-btn:hover { border-color: var(--primary); color: var(--primary); }
+
 /* ── Mensuration form layout ─────────────────────────────── */
 
 .mensuration-form-layout {

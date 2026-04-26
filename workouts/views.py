@@ -19,11 +19,14 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     AddSessionLineForm,
+    ExerciceForm,
     InscriptionForm,
     MensurationForm,
     SeanceNotesForm,
     SeancePlanificationForm,
+    SeanceTypeForm,
     SessionLigneQuickForm,
+    TemplateLigneFormSet,
 )
 from .models import (
     Exercice,
@@ -602,6 +605,118 @@ def import_backup(request: HttpRequest) -> HttpResponse:
         messages.error(request, f"Erreur lors de l'import : {exc}")
 
     return redirect("workouts:backup_page")
+
+
+# ── Progression ────────────────────────────────────────────────────────────────────
+
+# ── Hub Planifier ─────────────────────────────────────────────────────────────────
+
+@login_required
+def planifier_hub(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = SeancePlanificationForm(request.POST, user=request.user)
+        if form.is_valid():
+            seance = create_seance_from_template(
+                seance_type=form.cleaned_data["seance_type"],
+                date=form.cleaned_data["date"],
+                user=request.user,
+            )
+            logger.info("Séance planifiée depuis hub : pk=%s", seance.pk)
+            messages.success(request, "Séance planifiée.")
+            return redirect("workouts:seance_detail", pk=seance.pk)
+    else:
+        form = SeancePlanificationForm(user=request.user)
+
+    seance_types = (
+        SeanceType.objects.filter(user=request.user)
+        .prefetch_related("lignes__exercice")
+        .order_by("nom")
+    )
+    exercices = Exercice.objects.filter(actif=True).order_by("nom")
+    return render(
+        request,
+        "workouts/planifier_hub.html",
+        {
+            "form": form,
+            "seance_types": seance_types,
+            "exercices": exercices,
+        },
+    )
+
+
+# ── CRUD SeanceType ───────────────────────────────────────────────────────────────
+
+@login_required
+def creer_seance_type(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = SeanceTypeForm(request.POST)
+        formset = TemplateLigneFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
+            seance_type = form.save(commit=False)
+            seance_type.user = request.user
+            seance_type.save()
+            formset.instance = seance_type
+            formset.save()
+            logger.info("SeanceType créé : pk=%s nom='%s'", seance_type.pk, seance_type.nom)
+            messages.success(request, f"Type de séance « {seance_type.nom} » créé.")
+            return redirect("workouts:planifier_hub")
+    else:
+        form = SeanceTypeForm()
+        formset = TemplateLigneFormSet()
+    return render(
+        request,
+        "workouts/seance_type_form.html",
+        {"form": form, "formset": formset, "titre": "Nouveau type de séance"},
+    )
+
+
+@login_required
+def modifier_seance_type(request: HttpRequest, pk: int) -> HttpResponse:
+    seance_type = get_object_or_404(SeanceType, pk=pk, user=request.user)
+    if request.method == "POST":
+        form = SeanceTypeForm(request.POST, instance=seance_type)
+        formset = TemplateLigneFormSet(request.POST, instance=seance_type)
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            logger.info("SeanceType modifié : pk=%s", seance_type.pk)
+            messages.success(request, f"Type de séance « {seance_type.nom} » mis à jour.")
+            return redirect("workouts:planifier_hub")
+    else:
+        form = SeanceTypeForm(instance=seance_type)
+        formset = TemplateLigneFormSet(instance=seance_type)
+    return render(
+        request,
+        "workouts/seance_type_form.html",
+        {"form": form, "formset": formset, "titre": f"Modifier — {seance_type.nom}", "seance_type": seance_type},
+    )
+
+
+@require_POST
+@login_required
+def supprimer_seance_type(request: HttpRequest, pk: int) -> HttpResponse:
+    seance_type = get_object_or_404(SeanceType, pk=pk, user=request.user)
+    nom = seance_type.nom
+    seance_type.delete()
+    logger.info("SeanceType supprimé : pk=%s nom='%s'", pk, nom)
+    messages.success(request, f"Type de séance « {nom} » supprimé.")
+    return redirect("workouts:planifier_hub")
+
+
+# ── Exercices ─────────────────────────────────────────────────────────────────────
+
+@login_required
+def ajouter_exercice(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = ExerciceForm(request.POST)
+        if form.is_valid():
+            ex = form.save()
+            logger.info("Exercice créé : pk=%s nom='%s'", ex.pk, ex.nom)
+            messages.success(request, f"Exercice « {ex.nom} » ajouté.")
+            return redirect("workouts:planifier_hub")
+    else:
+        form = ExerciceForm()
+    return render(request, "workouts/exercice_form.html", {"form": form})
 
 
 # ── Progression ────────────────────────────────────────────────────────────────────

@@ -12,7 +12,14 @@ urlpatterns = [
     path("profil/", views.profil, name="profil"),
     # App
     path("", views.dashboard, name="dashboard"),
+    path("planifier/", views.planifier_hub, name="planifier_hub"),
     path("seances/planifier/", views.planifier_seance, name="planifier_seance"),
+    # Types de séance
+    path("types-de-seance/creer/", views.creer_seance_type, name="creer_seance_type"),
+    path("types-de-seance/<int:pk>/modifier/", views.modifier_seance_type, name="modifier_seance_type"),
+    path("types-de-seance/<int:pk>/supprimer/", views.supprimer_seance_type, name="supprimer_seance_type"),
+    # Exercices
+    path("exercices/ajouter/", views.ajouter_exercice, name="ajouter_exercice"),
     path("seances/<int:pk>/", views.seance_detail, name="seance_detail"),
     path("seances/<int:pk>/demarrer/", views.demarrer_seance, name="demarrer_seance"),
     path("seances/<int:pk>/terminer/", views.terminer_seance, name="terminer_seance"),

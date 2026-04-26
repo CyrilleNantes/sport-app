@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.forms import inlineformset_factory
 
-from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, TemplateLigne
 
 User = get_user_model()
 
@@ -28,6 +29,58 @@ class InscriptionForm(forms.Form):
         if p1 and p2 and p1 != p2:
             raise forms.ValidationError("Les mots de passe ne correspondent pas.")
         return cleaned_data
+
+
+# ── Types de séance ──────────────────────────────────────────────────────────────
+
+class SeanceTypeForm(forms.ModelForm):
+    class Meta:
+        model = SeanceType
+        fields = ["nom", "description"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class TemplateLigneInlineForm(forms.ModelForm):
+    class Meta:
+        model = TemplateLigne
+        fields = [
+            "ordre_exercice", "exercice", "numero_serie",
+            "repetitions_cible", "charge_cible", "rpe_cible",
+            "repos_secondes", "tempo",
+        ]
+        widgets = {
+            "ordre_exercice":    forms.NumberInput(attrs={"min": 1, "class": "tl-xs"}),
+            "exercice":          forms.Select(attrs={"class": "tl-exercice"}),
+            "numero_serie":      forms.NumberInput(attrs={"min": 1, "class": "tl-xs"}),
+            "repetitions_cible": forms.NumberInput(attrs={"min": 0, "class": "tl-sm", "inputmode": "numeric"}),
+            "charge_cible":      forms.NumberInput(attrs={"step": "0.5", "class": "tl-sm", "inputmode": "decimal"}),
+            "rpe_cible":         forms.NumberInput(attrs={"min": 0, "max": 10, "step": "0.5", "class": "tl-sm"}),
+            "repos_secondes":    forms.NumberInput(attrs={"min": 0, "class": "tl-sm"}),
+            "tempo":             forms.TextInput(attrs={"class": "tl-sm"}),
+        }
+
+
+TemplateLigneFormSet = inlineformset_factory(
+    SeanceType,
+    TemplateLigne,
+    form=TemplateLigneInlineForm,
+    extra=3,
+    can_delete=True,
+    min_num=0,
+)
+
+
+# ── Exercices ─────────────────────────────────────────────────────────────────────
+
+class ExerciceForm(forms.ModelForm):
+    class Meta:
+        model = Exercice
+        fields = ["nom", "categorie", "description", "video_url"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
 
 
 # ── Séances ─────────────────────────────────────────────────────────────────────

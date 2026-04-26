@@ -1,0 +1,83 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Planifier — Sport app{% endblock %}
+
+{% block content %}
+<div class="hub-grid">
+
+  <!-- Colonne gauche : formulaire de planification -->
+  <div class="stack">
+    <div class="panel">
+      <h2>Planifier une séance</h2>
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {% for field in form %}
+          <label>
+            {{ field.label }}
+            {{ field }}
+            {% if field.errors %}<span class="muted" style="color:var(--accent);font-size:0.8rem">{{ field.errors|join:", " }}</span>{% endif %}
+          </label>
+        {% endfor %}
+        <button class="button primary" type="submit">Créer la séance</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2 style="margin-bottom:0.25rem">Exercices</h2>
+      <p class="muted" style="font-size:0.85rem;margin:0 0 0.75rem">Référentiel partagé entre tous les utilisateurs.</p>
+      <a class="button" href="{% url 'workouts:ajouter_exercice' %}">+ Ajouter un exercice</a>
+    </div>
+  </div>
+
+  <!-- Colonne droite : types de séance -->
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="margin:0">Mes types de séance</h2>
+      <a class="button primary" style="font-size:0.85rem;min-height:36px;padding:0.4rem 0.85rem"
+         href="{% url 'workouts:creer_seance_type' %}">+ Nouveau</a>
+    </div>
+
+    {% if seance_types %}
+      {% for st in seance_types %}
+        {% with nb_ex=st.lignes.values_list.values_list|length nb_lignes=st.lignes.count %}
+        <div class="seance-type-row">
+          <div>
+            <strong>{{ st.nom }}</strong>
+            <div class="seance-type-meta">{{ st.lignes.count }} série{% if st.lignes.count > 1 %}s{% endif %}</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-shrink:0">
+            <a class="btn-icon" href="{% url 'workouts:modifier_seance_type' st.pk %}">Modifier</a>
+            <button class="btn-icon danger"
+                    onclick="document.getElementById('dialog-del-{{ st.pk }}').showModal()">
+              Supprimer
+            </button>
+          </div>
+        </div>
+
+        <!-- Dialog de confirmation -->
+        <dialog id="dialog-del-{{ st.pk }}" style="border:1px solid var(--line);border-radius:12px;padding:1.5rem;max-width:380px">
+          <p style="margin:0 0 0.5rem;font-weight:700">Supprimer « {{ st.nom }} » ?</p>
+          <p class="muted" style="font-size:0.88rem;margin:0 0 1.25rem">
+            Les séances déjà planifiées ne seront pas supprimées, elles perdront simplement le lien vers ce gabarit.
+          </p>
+          <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+            <button class="button" type="button"
+                    onclick="this.closest('dialog').close()">Annuler</button>
+            <form method="post" action="{% url 'workouts:supprimer_seance_type' st.pk %}" style="display:inline">
+              {% csrf_token %}
+              <button class="button" type="submit"
+                      style="background:var(--accent);border-color:var(--accent);color:white">
+                Supprimer
+              </button>
+            </form>
+          </div>
+        </dialog>
+        {% endwith %}
+      {% endfor %}
+    {% else %}
+      <p class="muted">Aucun type de séance pour le moment. Créez-en un pour commencer.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
