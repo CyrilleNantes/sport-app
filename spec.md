@@ -20,7 +20,8 @@ Application web Django de suivi d'entraînement de musculation pour un utilisate
 
 ### 1.2 Périmètre inclus
 
-- Gestion des types de séance (gabarits)
+- Authentification par identifiant + mot de passe
+- Gestion des types de séance (gabarits) et des exercices depuis l'interface utilisateur
 - Planification d'une séance à partir d'un gabarit
 - Déroulement en temps réel : démarrage, validation AJAX des séries, timer de repos, réordonnancement, ajout de séries hors-gabarit
 - Historique et export CSV
@@ -34,7 +35,7 @@ Application web Django de suivi d'entraînement de musculation pour un utilisate
 
 - Ne PAS implémenter de notifications push ni de rappels programmés
 - Ne PAS exposer DRF publiquement
-- Ne PAS créer de vue de suppression dans l'UI — la suppression est réservée à l'admin Django
+- Ne PAS créer de vue de suppression de séance dans l'UI — la suppression de séance est réservée à l'admin Django
 - Ne PAS modifier `ordre_prevu` après création d'une `SessionLigne` — c'est la clé de référence immuable
 - Ne PAS appeler `copy_template_lines_to_seance` si la séance a déjà des lignes
 
@@ -42,12 +43,12 @@ Application web Django de suivi d'entraînement de musculation pour un utilisate
 
 ## 2. Acteurs et Rôles
 
-Application multi-utilisateurs avec authentification par email et mot de passe. Toutes les URLs (sauf connexion/inscription) sont protégées par `@login_required`.
+Application multi-utilisateurs avec authentification par identifiant et mot de passe. Toutes les URLs (sauf connexion/inscription) sont protégées par `@login_required`.
 
 | Acteur | Accès |
 |--------|-------|
 | Utilisateur connecté | Accès à ses propres données uniquement |
-| Administrateur (is_staff=True) | CRUD complet via `/admin/` + lien Admin visible dans la nav |
+| Administrateur (is_staff=True) | CRUD complet via `/admin/` + icône ⚙ visible dans la topbar |
 
 Chaque utilisateur dispose d'un `UserProfile` (OneToOneField). Le prénom, nom et email sont stockés sur le modèle `User` Django standard.
 
@@ -73,11 +74,12 @@ Extension du `User` Django standard (OneToOneField). Permet d'associer des donn�
 
 Représente un exercice disponible dans l'application.
 
-**Champs** : nom (unique), catégorie musculaire, description, URL vidéo, actif.
+**Champs** : nom (unique global), catégorie musculaire, description, URL vidéo, actif.
 
 **Catégories** : Adducteurs, Abdos, Cardio, Dos, Épaule arrière, Fessiers, Gainage, Ischios, Pectoraux, Quadriceps, Autre.
 
 **Règles** :
+- Les exercices sont **partagés entre tous les utilisateurs** (référentiel commun)
 - Un exercice avec `actif = False` disparaît des formulaires mais reste en base
 - Un exercice utilisé dans un gabarit ou une séance ne peut pas être supprimé
 
@@ -139,23 +141,54 @@ Mesures corporelles à une date donnée. Tous les champs de mesure sont optionne
 
 ### 5.0 Authentification
 
-**Connexion** (`/connexion/`) : formulaire email + mot de passe. Redirige vers `?next=` si défini, sinon vers le dashboard. Lien vers l'inscription.
+**Connexion** (`/connexion/`) : formulaire identifiant + mot de passe. L'identifiant est normalisé en minuscules. Redirige vers `?next=` si défini, sinon vers le dashboard. Page servie avec `Cache-Control: no-store`.
 
-**Inscription** (`/inscription/`) : formulaire prénom, nom, email, mot de passe × 2. Crée un `User` Django (username = email) + `UserProfile`. Connecte automatiquement après inscription.
+**Inscription** (`/inscription/`) : formulaire prénom, nom, identifiant de connexion, email (optionnel), mot de passe × 2. Crée un `User` Django + `UserProfile`. Connecte automatiquement après inscription.
 
 **Déconnexion** (`POST /deconnexion/`) : requiert `@login_required` + `@require_POST`. Redirige vers la page de connexion.
 
-**Profil** (`/profil/`) : affiche le nom, email et statistiques de base (nombre de séances terminées, date de la dernière séance).
+**Profil** (`/profil/`) : affiche le nom, email et statistiques de base (nombre de séances terminées, date de la dernière séance). Contient un formulaire de **changement de mot de passe** (ancien mot de passe requis, session conservée après changement via `update_session_auth_hash`).
 
 **Règles** :
 - Toutes les URLs sauf connexion/inscription requièrent `@login_required`
 - Chaque utilisateur ne voit que ses propres données (SeanceType, Seance, Mensuration)
 - Exercice est partagé entre tous les utilisateurs
-- Le lien "Admin" dans la nav n'est visible que pour les utilisateurs `is_staff=True`
+- L'icône ⚙ Admin dans la topbar n'est visible que pour les utilisateurs `is_staff=True`
+- Les usernames sont stockés et comparés en minuscules
 
 ---
 
-### 5.1 Dashboard (`/`)
+### 5.1 Hub Planifier (`/planifier/`)
+
+Page centrale en deux zones :
+
+**Zone haute (2 colonnes)** :
+- Colonne gauche : formulaire de planification (choix du gabarit + date → crée la séance)
+- Colonne droite : liste des gabarits de l'utilisateur avec actions Modifier / Supprimer (confirmation via `<dialog>`) + bouton "Nouveau gabarit"
+
+**Zone basse (pleine largeur)** :
+- Référentiel des exercices partagés avec barre de recherche live (filtre JS côté client) et bouton "Ajouter"
+
+---
+
+### 5.2 Gabarits de séance — Création / Modification
+
+- Création : `/types-de-seance/creer/`
+- Modification : `/types-de-seance/<pk>/modifier/`
+- Suppression : `POST /types-de-seance/<pk>/supprimer/` (confirmation via `<dialog>`)
+
+Formulaire : nom + description du gabarit, puis tableau de lignes (formset inline) : ordre, exercice, numéro de série, répétitions cibles, charge, repos, RPE, tempo. Ajout dynamique de lignes via JS (clonage du gabarit de ligne vide).
+
+---
+
+### 5.3 Exercices — Ajout
+
+- Ajout : `/exercices/ajouter/` — formulaire nom, catégorie, description, URL vidéo.
+- La modification et la suppression sont réservées à l'admin Django.
+
+---
+
+### 5.4 Dashboard (`/`)
 
 Page d'accueil. Présente en un coup d'œil :
 
@@ -167,15 +200,7 @@ Page d'accueil. Présente en un coup d'œil :
 
 ---
 
-### 5.2 Planifier une séance (`/seances/planifier/`)
-
-L'utilisateur choisit un type de séance et une date. La séance est créée avec toutes les séries du gabarit copiées. Redirection vers le détail de la séance.
-
-**Règle** : si la séance a déjà des lignes (double-soumission), aucune ligne supplémentaire n'est créée.
-
----
-
-### 5.3 Détail d'une séance (`/seances/<pk>/`)
+### 5.5 Détail d'une séance (`/seances/<pk>/`)
 
 Affiche le déroulé complet : exercices groupés avec leurs séries, formulaire de validation par série, notes, boutons Début / Fin séance.
 
@@ -185,19 +210,14 @@ Affiche le déroulé complet : exercices groupés avec leurs séries, formulaire
 
 ---
 
-### 5.4 Démarrer une séance (`POST /seances/<pk>/demarrer/`)
+### 5.6 Démarrer / Terminer une séance
 
-Passe la séance en `IN_PROGRESS` et enregistre l'heure de début. Sans effet si déjà `COMPLETED`.
-
----
-
-### 5.5 Terminer une séance (`POST /seances/<pk>/terminer/`)
-
-Passe la séance en `COMPLETED` et enregistre l'heure de fin.
+- Démarrer (`POST /seances/<pk>/demarrer/`) : passe en `IN_PROGRESS`, enregistre l'heure de début. Sans effet si déjà `COMPLETED`.
+- Terminer (`POST /seances/<pk>/terminer/`) : passe en `COMPLETED`, enregistre l'heure de fin.
 
 ---
 
-### 5.6 Valider une série (`POST /lignes/<pk>/`)
+### 5.7 Valider une série (`POST /lignes/<pk>/`)
 
 L'utilisateur saisit répétitions réelles, charge réelle et RPE réel, puis valide.
 
@@ -208,60 +228,49 @@ L'utilisateur saisit répétitions réelles, charge réelle et RPE réel, puis v
 
 ---
 
-### 5.7 Réordonner un exercice (`POST /seances/<pk>/ordre/<ordre_prevu>/`)
+### 5.8 Réordonner un exercice (`POST /seances/<pk>/ordre/<ordre_prevu>/`)
 
 Déplace un exercice à une nouvelle position dans la séance. Tous les `ordre_reel` sont recalculés.
 
 ---
 
-### 5.8 Ajouter une série hors-gabarit (`POST /seances/<pk>/ajouter-ligne/`)
+### 5.9 Ajouter une série hors-gabarit (`POST /seances/<pk>/ajouter-ligne/`)
 
 Ajoute une série à un exercice existant dans la séance, ou crée un nouvel exercice. Le numéro de série est calculé automatiquement.
 
 ---
 
-### 5.9 Notes de séance (`POST /seances/<pk>/notes/`)
+### 5.10 Notes de séance (`POST /seances/<pk>/notes/`)
 
 Sauvegarde les notes libres de la séance.
 
 ---
 
-### 5.10 Historique (`/historique/`)
+### 5.11 Historique (`/historique/`)
 
 Liste toutes les séances terminées avec durée et lien vers le détail. Bouton d'export CSV.
 
 ---
 
-### 5.11 Export CSV brut (`/historique/export.csv`)
+### 5.12 Mensurations
 
-Toutes les séances avec leurs séries, tous statuts confondus. Format CSV virgule, UTF-8 sans BOM.
-
----
-
-### 5.12 Mensurations — liste (`/mensurations/`)
-
-Affiche tous les relevés corporels avec le delta par rapport au relevé précédent. Deltas positifs en bleu, négatifs en rouge. Les champs non renseignés ne sont pas affichés.
-
----
-
-### 5.13 Mensurations — ajout / modification
-
-- Ajout : `/mensurations/ajouter/` — date pré-remplie à aujourd'hui
-- Modification : `/mensurations/<pk>/modifier/`
+- Liste (`/mensurations/`) : tous les relevés avec delta par rapport au relevé précédent. Deltas positifs en bleu, négatifs en rouge.
+- Ajout (`/mensurations/ajouter/`) : date pré-remplie à aujourd'hui
+- Modification (`/mensurations/<pk>/modifier/`)
 
 Formulaire avec guide visuel (SVG du corps) pour repérer les zones de mesure.
 
 ---
 
-### 5.14 Backup & Restore (`/backup/`)
+### 5.13 Backup & Restore (`/backup/`)
 
-- **Export ZIP** : archive de toutes les données en JSON (6 fichiers, un par modèle)
-- **Import ZIP** : restauration complète atomique — suppression de toutes les données existantes, réimport, resynchronisation des IDs. Rollback complet si erreur. Confirmation via dialog natif avant soumission.
+- **Export ZIP** : archive de toutes les données en JSON (un fichier par modèle)
+- **Import ZIP** : restauration complète atomique — suppression de toutes les données existantes, réimport, resynchronisation des IDs. Rollback complet si erreur. Confirmation via `<dialog>` natif avant soumission.
 - **Export CSV lisible** : séances terminées uniquement, séparateur `;`, compatible Excel (BOM UTF-8)
 
 ---
 
-### 5.15 Interface Admin Django (`/admin/`)
+### 5.14 Interface Admin Django (`/admin/`)
 
 Accès complet à tous les modèles. Points notables :
 - `SeanceType` : gestion des `TemplateLigne` en inline dans la fiche
@@ -292,6 +301,14 @@ Champ numérique par exercice. Soumission automatique au changement de valeur (s
 
 Chargement AJAX au changement d'exercice ou d'indicateur. Courbe Chart.js avec gradient sous la courbe et ligne PR en bleu ciel pointillé. Données groupées par séance terminée.
 
+### 6.6 Recherche live sur les exercices
+
+Filtre JS côté client sur la grille d'exercices du hub Planifier. Recherche sur le nom et la catégorie.
+
+### 6.7 Formset dynamique (gabarits)
+
+Ajout de lignes dans le formulaire de gabarit par clonage de la dernière ligne vide, avec mise à jour de `TOTAL_FORMS`.
+
 ---
 
 ## 7. États du système
@@ -315,15 +332,7 @@ PLANIFIEE ──[Démarrer]──► IN_PROGRESS ──[Terminer]──► COMPL
 
 ---
 
-## 8. Historique des migrations
+## 8. Migration
 
-| Migration | Date | Description |
-|-----------|------|-------------|
-| `0001_initial` | 2026-04-15 | Schéma initial : `Exercice`, `SeanceType`, `TemplateLigne`, `Seance`, `SessionLigne` |
-| `0002_sessionligne_validee` | 2026-04-16 | Ajout `SessionLigne.validee` |
-| `0003_alter_exercice_categorie` | 2026-04-20 | Remplacement catégories génériques par catégories musculaires détaillées |
-| `0004_backfill_ordre_reel` | — | Backfill `SessionLigne.ordre_reel = ordre_prevu` pour les lignes NULL |
-| `0005_backfill_ordre_reel_explicit` | — | Deuxième passe de backfill |
-| `0006_mensuration` | 2026-04-23 | Ajout du modèle `Mensuration` |
-| `0007_add_user_system` | 2026-04-26 | Ajout `UserProfile`, FK `user` sur `SeanceType`/`Seance`/`Mensuration`, contrainte unique `(user, nom)` sur `SeanceType` |
-| `0008_data_cyrille` | 2026-04-26 | Data migration : création utilisateur Cyrille Limousin (superuser) et assignation de toutes les données existantes |
+Une seule migration : `0001_squashed` — schéma complet + création de l'utilisateur initial
+via la variable d'env `CYRILLE_INIT_PASSWORD` (si absente, aucun utilisateur créé).
