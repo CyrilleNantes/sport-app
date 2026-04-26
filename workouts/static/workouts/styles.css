@@ -681,6 +681,58 @@ textarea {
 .btn-icon:hover { border-color: var(--primary); color: var(--primary); }
 .btn-icon.danger:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ── Panel exercices ─────────────────────────────────────── */
+
+.exercice-panel-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.exercice-search-input {
+  min-height: 36px;
+  width: 220px;
+  font-size: 0.88rem;
+}
+
+.exercice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.exercice-card {
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.85rem;
+  transition: border-color 0.15s;
+}
+
+.exercice-card:hover { border-color: var(--primary); }
+
+.exercice-card-nom {
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--ink);
+  width: 100%;
+}
+
+.exercice-card-cat {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: 100%;
+}
+
 /* ── Formset TemplateLigne ────────────────────────────────── */
 
 .formset-wrap {

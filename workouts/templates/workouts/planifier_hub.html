@@ -3,30 +3,24 @@
 {% block title %}Planifier — Sport app{% endblock %}
 
 {% block content %}
-<div class="hub-grid">
+
+<!-- ── Ligne du haut : planifier + types de séance ── -->
+<div class="hub-grid" style="margin-bottom:2rem">
 
   <!-- Colonne gauche : formulaire de planification -->
-  <div class="stack">
-    <div class="panel">
-      <h2>Planifier une séance</h2>
-      <form method="post" class="stack">
-        {% csrf_token %}
-        {% for field in form %}
-          <label>
-            {{ field.label }}
-            {{ field }}
-            {% if field.errors %}<span class="muted" style="color:var(--accent);font-size:0.8rem">{{ field.errors|join:", " }}</span>{% endif %}
-          </label>
-        {% endfor %}
-        <button class="button primary" type="submit">Créer la séance</button>
-      </form>
-    </div>
-
-    <div class="panel">
-      <h2 style="margin-bottom:0.25rem">Exercices</h2>
-      <p class="muted" style="font-size:0.85rem;margin:0 0 0.75rem">Référentiel partagé entre tous les utilisateurs.</p>
-      <a class="button" href="{% url 'workouts:ajouter_exercice' %}">+ Ajouter un exercice</a>
-    </div>
+  <div class="panel">
+    <h2>Planifier une séance</h2>
+    <form method="post" class="stack">
+      {% csrf_token %}
+      {% for field in form %}
+        <label>
+          {{ field.label }}
+          {{ field }}
+          {% if field.errors %}<span style="color:var(--accent);font-size:0.8rem">{{ field.errors|join:", " }}</span>{% endif %}
+        </label>
+      {% endfor %}
+      <button class="button primary" type="submit">Créer la séance</button>
+    </form>
   </div>
 
   <!-- Colonne droite : types de séance -->
@@ -39,7 +33,6 @@
 
     {% if seance_types %}
       {% for st in seance_types %}
-        {% with nb_ex=st.lignes.values_list.values_list|length nb_lignes=st.lignes.count %}
         <div class="seance-type-row">
           <div>
             <strong>{{ st.nom }}</strong>
@@ -54,25 +47,20 @@
           </div>
         </div>
 
-        <!-- Dialog de confirmation -->
         <dialog id="dialog-del-{{ st.pk }}" style="border:1px solid var(--line);border-radius:12px;padding:1.5rem;max-width:380px">
           <p style="margin:0 0 0.5rem;font-weight:700">Supprimer « {{ st.nom }} » ?</p>
           <p class="muted" style="font-size:0.88rem;margin:0 0 1.25rem">
             Les séances déjà planifiées ne seront pas supprimées, elles perdront simplement le lien vers ce gabarit.
           </p>
           <div style="display:flex;gap:0.75rem;justify-content:flex-end">
-            <button class="button" type="button"
-                    onclick="this.closest('dialog').close()">Annuler</button>
+            <button class="button" type="button" onclick="this.closest('dialog').close()">Annuler</button>
             <form method="post" action="{% url 'workouts:supprimer_seance_type' st.pk %}" style="display:inline">
               {% csrf_token %}
               <button class="button" type="submit"
-                      style="background:var(--accent);border-color:var(--accent);color:white">
-                Supprimer
-              </button>
+                      style="background:var(--accent);border-color:var(--accent);color:white">Supprimer</button>
             </form>
           </div>
         </dialog>
-        {% endwith %}
       {% endfor %}
     {% else %}
       <p class="muted">Aucun type de séance pour le moment. Créez-en un pour commencer.</p>
@@ -80,4 +68,57 @@
   </div>
 
 </div>
+
+<!-- ── Bas de page : référentiel exercices ── -->
+<div class="panel">
+
+  <div class="exercice-panel-header">
+    <div>
+      <h2 style="margin:0 0 0.15rem">Exercices</h2>
+      <p class="muted" style="font-size:0.82rem;margin:0">Référentiel partagé — {{ exercices|length }} exercice{{ exercices|length|pluralize }}</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <input id="exercice-search" type="search" placeholder="Rechercher…"
+             class="exercice-search-input" autocomplete="off">
+      <a class="button primary" style="white-space:nowrap;font-size:0.85rem;min-height:36px;padding:0.4rem 0.85rem"
+         href="{% url 'workouts:ajouter_exercice' %}">+ Ajouter</a>
+    </div>
+  </div>
+
+  <div class="exercice-grid" id="exercice-grid">
+    {% for ex in exercices %}
+      <div class="exercice-card" data-search="{{ ex.nom|lower }} {{ ex.get_categorie_display|lower }}">
+        <span class="exercice-card-nom">{{ ex.nom }}</span>
+        <span class="exercice-card-cat">{{ ex.get_categorie_display }}</span>
+      </div>
+    {% empty %}
+      <p class="muted">Aucun exercice pour le moment.</p>
+    {% endfor %}
+  </div>
+
+  <p class="muted" id="exercice-no-result" style="display:none;font-size:0.88rem;margin:0.75rem 0 0">
+    Aucun exercice ne correspond à cette recherche.
+  </p>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const searchInput = document.getElementById('exercice-search');
+  const cards = document.querySelectorAll('.exercice-card');
+  const noResult = document.getElementById('exercice-no-result');
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+    cards.forEach(card => {
+      const match = !q || card.dataset.search.includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    noResult.style.display = (q && visible === 0) ? '' : 'none';
+  });
+</script>
 {% endblock %}
