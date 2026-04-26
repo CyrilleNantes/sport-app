@@ -131,8 +131,9 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 
-# Optionnel mais recommandé
-CSRF_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_HTTPONLY True = le cookie de session n'est pas accessible en JS (recommandé)
+# CSRF_COOKIE_HTTPONLY reste à False (défaut Django) — True casse la vérif CSRF derrière un proxy HTTPS
+CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_HTTPONLY = True
 
 # Protection basique supplémentaire
