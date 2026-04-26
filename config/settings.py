@@ -73,6 +73,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# --- Authentification ---
+LOGIN_URL = "/connexion/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/connexion/"
+
 # --- Database ---
 DATABASES = {
     "default": dj_database_url.config(

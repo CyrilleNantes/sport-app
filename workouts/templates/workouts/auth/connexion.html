@@ -1,0 +1,45 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion — Sport app</title>
+  <link rel="stylesheet" href="{% static 'workouts/styles.css' %}">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <p class="auth-brand">Sport app</p>
+      <p class="auth-subtitle">Connectez-vous à votre espace</p>
+
+      {% if messages %}
+        <div class="messages" style="margin-bottom:1rem">
+          {% for message in messages %}
+            <p class="message {{ message.tags }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'workouts:connexion' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+        {% csrf_token %}
+        <div class="auth-form">
+          <label for="email">
+            Email
+            <input type="email" id="email" name="email" required autofocus autocomplete="email">
+          </label>
+          <label for="password">
+            Mot de passe
+            <input type="password" id="password" name="password" required autocomplete="current-password">
+          </label>
+          <button type="submit" class="button primary auth-submit">Se connecter</button>
+        </div>
+      </form>
+
+      <p class="auth-footer">
+        Pas encore de compte ? <a href="{% url 'workouts:inscription' %}">Créer un compte</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

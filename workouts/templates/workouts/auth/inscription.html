@@ -1,0 +1,76 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inscription — Sport app</title>
+  <link rel="stylesheet" href="{% static 'workouts/styles.css' %}">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <p class="auth-brand">Sport app</p>
+      <p class="auth-subtitle">Créer votre compte</p>
+
+      {% if messages %}
+        <div class="messages" style="margin-bottom:1rem">
+          {% for message in messages %}
+            <p class="message {{ message.tags }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="auth-form">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <label for="prenom">
+              Prénom
+              <input type="text" id="prenom" name="prenom"
+                     value="{{ form.prenom.value|default:'' }}" required autocomplete="given-name">
+            </label>
+            <label for="nom">
+              Nom
+              <input type="text" id="nom" name="nom"
+                     value="{{ form.nom.value|default:'' }}" required autocomplete="family-name">
+            </label>
+          </div>
+
+          <label for="email">
+            Email
+            <input type="email" id="email" name="email"
+                   value="{{ form.email.value|default:'' }}" required autocomplete="email">
+          </label>
+
+          <label for="password1">
+            Mot de passe
+            <input type="password" id="password1" name="password1" required autocomplete="new-password">
+          </label>
+
+          <label for="password2">
+            Confirmer le mot de passe
+            <input type="password" id="password2" name="password2" required autocomplete="new-password">
+          </label>
+
+          {% if form.errors %}
+            <div class="message error">
+              {% for field in form %}
+                {% for error in field.errors %}<p>{{ error }}</p>{% endfor %}
+              {% endfor %}
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+
+          <button type="submit" class="button primary auth-submit">Créer mon compte</button>
+        </div>
+      </form>
+
+      <p class="auth-footer">
+        Déjà un compte ? <a href="{% url 'workouts:connexion' %}">Se connecter</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

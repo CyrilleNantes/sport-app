@@ -5,6 +5,12 @@ from . import views
 app_name = "workouts"
 
 urlpatterns = [
+    # Auth
+    path("connexion/", views.connexion, name="connexion"),
+    path("inscription/", views.inscription, name="inscription"),
+    path("deconnexion/", views.deconnexion, name="deconnexion"),
+    path("profil/", views.profil, name="profil"),
+    # App
     path("", views.dashboard, name="dashboard"),
     path("seances/planifier/", views.planifier_seance, name="planifier_seance"),
     path("seances/<int:pk>/", views.seance_detail, name="seance_detail"),

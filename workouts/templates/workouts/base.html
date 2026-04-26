@@ -20,9 +20,18 @@
         <a href="{% url 'workouts:progression_page' %}">Progression</a>
         <a href="{% url 'workouts:mensurations' %}">Mensurations</a>
         <a href="{% url 'workouts:backup_page' %}">Backup</a>
-        <a href="{% url 'admin:index' %}">Admin</a>
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}
       </nav>
-      <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
+      <div class="topbar-right">
+        <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
+        {% if user.is_authenticated %}
+        <span class="topbar-username">{{ user.first_name }}</span>
+        <form method="post" action="{% url 'workouts:deconnexion' %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="topbar-logout">Déconnexion</button>
+        </form>
+        {% endif %}
+      </div>
     </div>
   </header>
 
