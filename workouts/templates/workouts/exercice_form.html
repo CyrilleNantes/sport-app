@@ -1,0 +1,32 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Ajouter un exercice — Sport app{% endblock %}
+
+{% block content %}
+<div class="panel narrow">
+  <h2 style="margin-bottom:1.25rem">Ajouter un exercice</h2>
+  <p class="muted" style="font-size:0.88rem;margin:0 0 1.25rem">
+    Les exercices sont partagés entre tous les utilisateurs de l'application.
+  </p>
+
+  <form method="post" class="stack">
+    {% csrf_token %}
+    {% for field in form %}
+      <label>
+        {{ field.label }}
+        {{ field }}
+        {% if field.errors %}
+          <span style="color:var(--accent);font-size:0.8rem">{{ field.errors|join:", " }}</span>
+        {% endif %}
+      </label>
+    {% endfor %}
+    {% if form.non_field_errors %}
+      <p class="message error">{{ form.non_field_errors|join:", " }}</p>
+    {% endif %}
+    <div class="actions">
+      <button class="button primary" type="submit">Ajouter l'exercice</button>
+      <a class="button" href="{% url 'workouts:planifier_hub' %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

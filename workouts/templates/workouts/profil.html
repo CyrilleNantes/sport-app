@@ -1,0 +1,37 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}Mon profil — Sport app{% endblock %}
+
+{% block content %}
+<div class="stack" style="max-width:520px">
+  <h2>Mon profil</h2>
+
+  <div class="panel">
+    <p style="margin:0 0 0.25rem"><strong>{{ user.get_full_name }}</strong></p>
+    <p class="muted" style="margin:0;font-size:0.9rem">{{ user.email }}</p>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-bottom:1rem">Statistiques</h2>
+    <div style="display:flex;gap:2rem;flex-wrap:wrap">
+      <div>
+        <div style="font-size:2rem;font-weight:800;color:var(--primary)">{{ nb_seances }}</div>
+        <div class="muted" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">Séances terminées</div>
+      </div>
+      {% if derniere_seance %}
+      <div>
+        <div style="font-size:1.1rem;font-weight:700">{{ derniere_seance.date|date:"d/m/Y" }}</div>
+        <div class="muted" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">Dernière séance</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-bottom:1rem">Sécurité</h2>
+    <p class="muted" style="font-size:0.9rem;margin:0">
+      Pour modifier votre mot de passe ou vos informations, contactez l'administrateur ou utilisez <a href="{% url 'admin:index' %}">l'interface admin</a>.
+    </p>
+  </div>
+</div>
+{% endblock %}

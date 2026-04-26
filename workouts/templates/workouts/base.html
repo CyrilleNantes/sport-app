@@ -15,14 +15,25 @@
   <header class="topbar">
     <div class="topbar-inner">
       <nav>
-        <a href="{% url 'workouts:planifier_seance' %}">Planifier</a>
+        <a href="{% url 'workouts:planifier_hub' %}">Planifier</a>
         <a href="{% url 'workouts:historique' %}">Historique</a>
         <a href="{% url 'workouts:progression_page' %}">Progression</a>
         <a href="{% url 'workouts:mensurations' %}">Mensurations</a>
         <a href="{% url 'workouts:backup_page' %}">Backup</a>
-        <a href="{% url 'admin:index' %}">Admin</a>
       </nav>
-      <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
+      <div class="topbar-right">
+        <a class="brand" href="{% url 'workouts:dashboard' %}">Sport app</a>
+        {% if user.is_authenticated %}
+        <span class="topbar-username">{{ user.first_name }}</span>
+        {% if user.is_staff %}
+        <a href="{% url 'admin:index' %}" class="topbar-admin-btn" title="Administration">⚙</a>
+        {% endif %}
+        <form method="post" action="{% url 'workouts:deconnexion' %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="topbar-logout">Déconnexion</button>
+        </form>
+        {% endif %}
+      </div>
     </div>
   </header>
 

@@ -11,8 +11,8 @@ from django.utils import timezone
 from .models import Exercice, Seance, SeanceType, SessionLigne, StatutSeance, TemplateLigne
 
 
-def progression_exercice(exercice_id: int, indicateur: str = "1rm") -> list[dict]:
-    """Retourne une valeur par séance pour un exercice.
+def progression_exercice(exercice_id: int, user, indicateur: str = "1rm") -> list[dict]:
+    """Retourne une valeur par séance pour un exercice, filtrée par utilisateur.
 
     indicateur='1rm'     → 1RM Epley estimé (meilleure série)
     indicateur='tonnage' → somme charge×reps de toutes les séries validées
@@ -21,6 +21,7 @@ def progression_exercice(exercice_id: int, indicateur: str = "1rm") -> list[dict
         SessionLigne.objects
         .filter(
             exercice_id=exercice_id,
+            seance__user=user,
             seance__statut=StatutSeance.COMPLETED,
             charge_reelle__isnull=False,
             repetitions_reelles__isnull=False,
@@ -86,9 +87,9 @@ def copy_template_lines_to_seance(seance: Seance) -> list[SessionLigne]:
 
 @transaction.atomic
 def create_seance_from_template(
-    *, seance_type: SeanceType, date: datetime.date
+    *, seance_type: SeanceType, date: datetime.date, user
 ) -> Seance:
-    seance = Seance.objects.create(seance_type=seance_type, date=date)
+    seance = Seance.objects.create(seance_type=seance_type, date=date, user=user)
     copy_template_lines_to_seance(seance)
     logger.info(
         "Séance créée depuis template : pk=%s type='%s' date=%s",

@@ -1,7 +1,21 @@
 from django.contrib import admin
 
-from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, TemplateLigne
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, TemplateLigne, UserProfile
 from .services import copy_template_lines_to_seance
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "get_email", "get_full_name")
+    search_fields = ("user__email", "user__first_name", "user__last_name")
+
+    @admin.display(description="Email")
+    def get_email(self, obj):
+        return obj.user.email
+
+    @admin.display(description="Nom complet")
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()
 
 
 @admin.register(Exercice)
@@ -20,7 +34,8 @@ class TemplateLigneInline(admin.TabularInline):
 
 @admin.register(SeanceType)
 class SeanceTypeAdmin(admin.ModelAdmin):
-    list_display = ("nom", "updated_at")
+    list_display = ("nom", "user", "updated_at")
+    list_filter = ("user",)
     search_fields = ("nom", "description")
     inlines = [TemplateLigneInline]
 
@@ -35,8 +50,8 @@ class SessionLigneInline(admin.TabularInline):
 
 @admin.register(Seance)
 class SeanceAdmin(admin.ModelAdmin):
-    list_display = ("date", "seance_type", "statut", "started_at", "ended_at")
-    list_filter = ("statut", "date", "seance_type")
+    list_display = ("date", "user", "seance_type", "statut", "started_at", "ended_at")
+    list_filter = ("statut", "user", "date", "seance_type")
     search_fields = ("notes",)
     inlines = [SessionLigneInline]
 
@@ -63,8 +78,8 @@ class TemplateLigneAdmin(admin.ModelAdmin):
 
 @admin.register(Mensuration)
 class MensurationAdmin(admin.ModelAdmin):
-    list_display = ("date", "poids", "tour_taille", "tour_poitrine", "tour_bras", "masse_grasse")
-    list_filter = ("date",)
+    list_display = ("date", "user", "poids", "tour_taille", "tour_poitrine", "tour_bras", "masse_grasse")
+    list_filter = ("user", "date")
     ordering = ("-date",)
 
 
@@ -82,5 +97,5 @@ class SessionLigneAdmin(admin.ModelAdmin):
         "validee",
         "completed_at",
     )
-    list_filter = ("seance__statut", "exercice")
+    list_filter = ("seance__statut", "seance__user", "exercice")
     autocomplete_fields = ("seance", "exercice")

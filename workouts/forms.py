@@ -1,17 +1,106 @@
 from django import forms
+from django.contrib.auth import get_user_model
+from django.forms import inlineformset_factory
 
-from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, TemplateLigne
 
+User = get_user_model()
+
+
+# ── Auth ────────────────────────────────────────────────────────────────────────
+
+class InscriptionForm(forms.Form):
+    prenom = forms.CharField(max_length=50, label="Prénom")
+    nom = forms.CharField(max_length=50, label="Nom")
+    email = forms.EmailField(label="Adresse email")
+    password1 = forms.CharField(label="Mot de passe", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Confirmer le mot de passe", widget=forms.PasswordInput)
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Un compte existe déjà avec cet email.")
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get("password1")
+        p2 = cleaned_data.get("password2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Les mots de passe ne correspondent pas.")
+        return cleaned_data
+
+
+# ── Types de séance ──────────────────────────────────────────────────────────────
+
+class SeanceTypeForm(forms.ModelForm):
+    class Meta:
+        model = SeanceType
+        fields = ["nom", "description"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class TemplateLigneInlineForm(forms.ModelForm):
+    class Meta:
+        model = TemplateLigne
+        fields = [
+            "ordre_exercice", "exercice", "numero_serie",
+            "repetitions_cible", "charge_cible", "rpe_cible",
+            "repos_secondes", "tempo",
+        ]
+        widgets = {
+            "ordre_exercice":    forms.NumberInput(attrs={"min": 1, "class": "tl-xs"}),
+            "exercice":          forms.Select(attrs={"class": "tl-exercice"}),
+            "numero_serie":      forms.NumberInput(attrs={"min": 1, "class": "tl-xs"}),
+            "repetitions_cible": forms.NumberInput(attrs={"min": 0, "class": "tl-sm", "inputmode": "numeric"}),
+            "charge_cible":      forms.NumberInput(attrs={"step": "0.5", "class": "tl-sm", "inputmode": "decimal"}),
+            "rpe_cible":         forms.NumberInput(attrs={"min": 0, "max": 10, "step": "0.5", "class": "tl-sm"}),
+            "repos_secondes":    forms.NumberInput(attrs={"min": 0, "class": "tl-sm"}),
+            "tempo":             forms.TextInput(attrs={"class": "tl-sm"}),
+        }
+
+
+TemplateLigneFormSet = inlineformset_factory(
+    SeanceType,
+    TemplateLigne,
+    form=TemplateLigneInlineForm,
+    extra=3,
+    can_delete=True,
+    min_num=0,
+)
+
+
+# ── Exercices ─────────────────────────────────────────────────────────────────────
+
+class ExerciceForm(forms.ModelForm):
+    class Meta:
+        model = Exercice
+        fields = ["nom", "categorie", "description", "video_url"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+# ── Séances ─────────────────────────────────────────────────────────────────────
 
 class SeancePlanificationForm(forms.Form):
     seance_type = forms.ModelChoiceField(
-        label="Seance type",
-        queryset=SeanceType.objects.all(),
+        label="Type de séance",
+        queryset=SeanceType.objects.none(),
     )
     date = forms.DateField(
         label="Date",
         widget=forms.DateInput(attrs={"type": "date"}),
     )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            self.fields["seance_type"].queryset = SeanceType.objects.filter(
+                user=user
+            ).order_by("nom")
 
 
 class SeanceNotesForm(forms.ModelForm):
@@ -57,6 +146,8 @@ class SessionLigneQuickForm(forms.ModelForm):
         }
 
 
+# ── Mensurations ─────────────────────────────────────────────────────────────────
+
 class MensurationForm(forms.ModelForm):
     class Meta:
         model = Mensuration
@@ -83,6 +174,8 @@ class MensurationForm(forms.ModelForm):
             "notes": forms.Textarea(attrs={"rows": 2}),
         }
 
+
+# ── Ajout série hors-gabarit ─────────────────────────────────────────────────────
 
 class AddSessionLineForm(forms.Form):
     exercice = forms.ModelChoiceField(

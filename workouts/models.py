@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -45,7 +46,15 @@ class Exercice(models.Model):
 
 
 class SeanceType(models.Model):
-    nom = models.CharField(max_length=120, unique=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="seance_types",
+        null=True,
+        blank=True,
+        verbose_name="utilisateur",
+    )
+    nom = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -54,6 +63,12 @@ class SeanceType(models.Model):
         ordering = ["nom"]
         verbose_name = "seance type"
         verbose_name_plural = "seances types"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "nom"],
+                name="unique_seancetype_nom_par_user",
+            ),
+        ]
 
     def __str__(self):
         return self.nom
@@ -133,6 +148,14 @@ class TemplateLigne(models.Model):
 
 
 class Seance(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="seances_user",
+        null=True,
+        blank=True,
+        verbose_name="utilisateur",
+    )
     seance_type = models.ForeignKey(
         SeanceType,
         on_delete=models.SET_NULL,
@@ -288,7 +311,31 @@ class SessionLigne(models.Model):
             self.completed_at = timezone.now()
 
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+        verbose_name="utilisateur",
+    )
+
+    class Meta:
+        verbose_name = "profil utilisateur"
+        verbose_name_plural = "profils utilisateurs"
+
+    def __str__(self):
+        return f"Profil de {self.user.get_full_name() or self.user.email}"
+
+
 class Mensuration(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="mensurations",
+        null=True,
+        blank=True,
+        verbose_name="utilisateur",
+    )
     date = models.DateField()
     poids = models.DecimalField(
         max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Poids (kg)"

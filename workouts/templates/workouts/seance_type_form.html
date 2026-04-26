@@ -1,0 +1,162 @@
+{% extends "workouts/base.html" %}
+
+{% block title %}{{ titre }} — Sport app{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  <div class="stack" style="max-width:900px">
+
+    <!-- Infos générales -->
+    <div class="panel">
+      <h2 style="margin-bottom:1rem">{{ titre }}</h2>
+      <div class="stack">
+        <label>
+          Nom
+          {{ form.nom }}
+          {% if form.nom.errors %}<span style="color:var(--accent);font-size:0.8rem">{{ form.nom.errors|join:", " }}</span>{% endif %}
+        </label>
+        <label>
+          Description (optionnelle)
+          {{ form.description }}
+        </label>
+        {% if form.non_field_errors %}
+          <p class="message error">{{ form.non_field_errors|join:", " }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Lignes du programme -->
+    <div class="panel">
+      <h2 style="margin-bottom:1rem">Programme (séries)</h2>
+      <p class="muted" style="font-size:0.85rem;margin:0 0 1rem">
+        Chaque ligne = une série. Groupez par numéro d'ordre pour un même exercice.
+        Cochez « Suppr. » pour retirer une ligne existante.
+      </p>
+
+      <div class="formset-wrap">
+        <table class="formset-table">
+          <thead>
+            <tr>
+              <th>Ordre</th>
+              <th style="min-width:200px">Exercice</th>
+              <th>Série</th>
+              <th>Reps</th>
+              <th>Charge (kg)</th>
+              <th>Repos (s)</th>
+              <th>RPE</th>
+              <th>Tempo</th>
+              <th class="formset-delete-col">Suppr.</th>
+            </tr>
+          </thead>
+          <tbody id="formset-body">
+            {% for ligne_form in formset %}
+              <tr class="formset-row{% if ligne_form.instance.pk %} existing{% endif %}">
+                <td>{{ ligne_form.ordre_exercice }}</td>
+                <td>{{ ligne_form.exercice }}</td>
+                <td>{{ ligne_form.numero_serie }}</td>
+                <td>{{ ligne_form.repetitions_cible }}</td>
+                <td>{{ ligne_form.charge_cible }}</td>
+                <td>{{ ligne_form.repos_secondes }}</td>
+                <td>{{ ligne_form.rpe_cible }}</td>
+                <td>{{ ligne_form.tempo }}</td>
+                <td class="formset-delete-col">
+                  {% if ligne_form.instance.pk %}
+                    {{ ligne_form.DELETE }}
+                  {% endif %}
+                  {# Champs cachés nécessaires au formset #}
+                  {{ ligne_form.id }}
+                  {% for hidden in ligne_form.hidden_fields %}{{ hidden }}{% endfor %}
+                </td>
+              </tr>
+              {% if ligne_form.errors %}
+                <tr>
+                  <td colspan="9">
+                    <p class="message error" style="margin:0;font-size:0.82rem">
+                      {% for field, errors in ligne_form.errors.items %}{{ errors|join:", " }} {% endfor %}
+                    </p>
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <button type="button" class="formset-add-btn" id="add-row-btn">
+        + Ajouter une série
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="button primary" type="submit">Enregistrer</button>
+      <a class="button" href="{% url 'workouts:planifier_hub' %}">Annuler</a>
+      {% if seance_type %}
+        <button class="button" type="button" style="margin-left:auto;color:var(--accent);border-color:var(--accent)"
+                onclick="document.getElementById('dialog-del').showModal()">
+          Supprimer ce type
+        </button>
+      {% endif %}
+    </div>
+
+  </div>
+</form>
+
+{% if seance_type %}
+<dialog id="dialog-del" style="border:1px solid var(--line);border-radius:12px;padding:1.5rem;max-width:380px">
+  <p style="margin:0 0 0.5rem;font-weight:700">Supprimer « {{ seance_type.nom }} » ?</p>
+  <p class="muted" style="font-size:0.88rem;margin:0 0 1.25rem">
+    Les séances déjà planifiées ne seront pas supprimées.
+  </p>
+  <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+    <button class="button" type="button" onclick="this.closest('dialog').close()">Annuler</button>
+    <form method="post" action="{% url 'workouts:supprimer_seance_type' seance_type.pk %}">
+      {% csrf_token %}
+      <button class="button" type="submit"
+              style="background:var(--accent);border-color:var(--accent);color:white">Supprimer</button>
+    </form>
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Ajout dynamique de lignes dans le formset
+  const totalFormsInput = document.querySelector('[name$="TOTAL_FORMS"]');
+  const body = document.getElementById('formset-body');
+  const addBtn = document.getElementById('add-row-btn');
+
+  // On prend la dernière ligne vide comme gabarit (les `extra` du formset)
+  // On cherche la première ligne sans id caché (= ligne vide du formset)
+  function getEmptyRow() {
+    const rows = body.querySelectorAll('tr.formset-row:not(.existing)');
+    return rows.length > 0 ? rows[rows.length - 1] : null;
+  }
+
+  addBtn.addEventListener('click', () => {
+    const total = parseInt(totalFormsInput.value);
+    const emptyRow = getEmptyRow();
+    if (!emptyRow) return;
+
+    const newRow = emptyRow.cloneNode(true);
+    // Remplace l'index __prefix__ ou l'index de la ligne vide par le prochain index
+    const oldIndex = total - 1; // l'index de la dernière ligne vide
+    newRow.innerHTML = newRow.innerHTML
+      .replaceAll(`-${oldIndex}-`, `-${total}-`)
+      .replaceAll(`_${oldIndex}_`, `_${total}_`);
+
+    // Réinitialise les valeurs
+    newRow.querySelectorAll('input:not([type=hidden]), select').forEach(el => {
+      if (el.type === 'checkbox') el.checked = false;
+      else el.value = '';
+    });
+
+    body.appendChild(newRow);
+    totalFormsInput.value = total + 1;
+  });
+</script>
+{% endblock %}
