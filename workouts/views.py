@@ -66,7 +66,9 @@ def connexion(request: HttpRequest) -> HttpResponse:
             next_url = request.GET.get("next", "")
             return redirect(next_url or "workouts:dashboard")
         messages.error(request, "Identifiant ou mot de passe incorrect.")
-    return render(request, "workouts/auth/connexion.html")
+    response = render(request, "workouts/auth/connexion.html")
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return response
 
 
 def inscription(request: HttpRequest) -> HttpResponse:
