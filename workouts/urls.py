@@ -10,6 +10,7 @@ urlpatterns = [
     path("inscription/", views.inscription, name="inscription"),
     path("deconnexion/", views.deconnexion, name="deconnexion"),
     path("profil/", views.profil, name="profil"),
+    path("profil/changer-mot-de-passe/", views.changer_mot_de_passe, name="changer_mot_de_passe"),
     # App
     path("", views.dashboard, name="dashboard"),
     path("planifier/", views.planifier_hub, name="planifier_hub"),

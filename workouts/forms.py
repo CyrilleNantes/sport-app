@@ -42,6 +42,32 @@ class InscriptionForm(forms.Form):
         return cleaned_data
 
 
+# ── Changement de mot de passe ────────────────────────────────────────────────────
+
+class ChangerMotDePasseForm(forms.Form):
+    ancien = forms.CharField(label="Mot de passe actuel", widget=forms.PasswordInput)
+    nouveau1 = forms.CharField(label="Nouveau mot de passe", widget=forms.PasswordInput)
+    nouveau2 = forms.CharField(label="Confirmer le nouveau mot de passe", widget=forms.PasswordInput)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_ancien(self):
+        ancien = self.cleaned_data["ancien"]
+        if self.user and not self.user.check_password(ancien):
+            raise forms.ValidationError("Mot de passe actuel incorrect.")
+        return ancien
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get("nouveau1")
+        p2 = cleaned_data.get("nouveau2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Les nouveaux mots de passe ne correspondent pas.")
+        return cleaned_data
+
+
 # ── Types de séance ──────────────────────────────────────────────────────────────
 
 class SeanceTypeForm(forms.ModelForm):
