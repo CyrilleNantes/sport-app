@@ -133,7 +133,18 @@ Créée par copie du gabarit lors de la planification. Contient les données cib
 
 Mesures corporelles à une date donnée. Tous les champs de mesure sont optionnels.
 
-**Champs** : `user` (FK User, CASCADE), date, poids (kg), tour de taille, hanches, bras, cuisse, poitrine (cm), masse grasse (%), notes.
+**Champs généraux** : `user` (FK User, CASCADE), date, poids (kg), IMC.
+
+**Composition corporelle (balance connectée)** :
+- Masse grasse (%), masse grasse (kg), masse sans graisse (kg)
+- Gras sous-cutané (%), graisse viscérale (indice)
+- Masse musculaire (kg + %), muscle squelettique (kg + %), masse osseuse (kg)
+- Eau corporelle (kg + %), protéines (kg + %)
+- Métabolisme de base (kcal), âge biologique (ans)
+
+**Mensurations manuelles** : tour de poitrine, taille, hanches, bras, cuisse (cm).
+
+**Autres** : notes.
 
 ---
 
@@ -254,11 +265,13 @@ Liste toutes les séances terminées avec durée et lien vers le détail. Bouton
 
 ### 5.12 Mensurations
 
-- Liste (`/mensurations/`) : tous les relevés avec delta par rapport au relevé précédent. Deltas positifs en bleu, négatifs en rouge.
+- Liste (`/mensurations/`) : tous les relevés avec delta par rapport au relevé précédent. Deltas positifs en bleu, négatifs en rouge. Tous les champs non renseignés sont masqués.
 - Ajout (`/mensurations/ajouter/`) : date pré-remplie à aujourd'hui
 - Modification (`/mensurations/<pk>/modifier/`)
 
-Formulaire avec guide visuel (SVG du corps) pour repérer les zones de mesure.
+Formulaire organisé en 3 sections : **Balance connectée** (composition corporelle complète), **Mensurations manuelles** (tours au mètre ruban avec guide visuel SVG du corps à droite), **Notes**.
+
+Le bandeau "Dernières mensurations" du dashboard affiche conditionnellement : poids, MG %, muscles %, graisse viscérale, âge biologique, métabolisme, tours si renseignés.
 
 ---
 
@@ -332,7 +345,9 @@ PLANIFIEE ──[Démarrer]──► IN_PROGRESS ──[Terminer]──► COMPL
 
 ---
 
-## 8. Migration
+## 8. Migrations
 
-Une seule migration : `0001_squashed` — schéma complet + création de l'utilisateur initial
-via la variable d'env `CYRILLE_INIT_PASSWORD` (si absente, aucun utilisateur créé).
+| Migration | Description |
+|-----------|-------------|
+| `0001_squashed` | Schéma complet + création de l'utilisateur initial via `CYRILLE_INIT_PASSWORD` |
+| `0002_mensuration_balance` | Ajout des 16 champs de composition corporelle sur `Mensuration` |
