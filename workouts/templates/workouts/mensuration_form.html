@@ -1,5 +1,4 @@
 {% extends "workouts/base.html" %}
-{% load static %}
 
 {% block title %}{{ titre }} — Mensurations{% endblock %}
 
@@ -11,63 +10,149 @@
   </div>
 </section>
 
-<div class="mensuration-form-layout">
-  <!-- Form panel -->
+<form method="post" class="stack" style="max-width:780px">
+  {% csrf_token %}
+
+  <!-- Date -->
   <div class="panel">
-    <form method="post" class="form stack">
-      {% csrf_token %}
-
-      <div class="form-field">
-        <label for="{{ form.date.id_for_label }}">Date *</label>
-        {{ form.date }}
-      </div>
-
-      <div class="mensuration-form-grid">
-        <div class="form-field">
-          <label for="{{ form.poids.id_for_label }}">{{ form.poids.label }}</label>
-          {{ form.poids }}
-        </div>
-        <div class="form-field">
-          <label for="{{ form.masse_grasse.id_for_label }}">{{ form.masse_grasse.label }}</label>
-          {{ form.masse_grasse }}
-        </div>
-        <div class="form-field">
-          <label for="{{ form.tour_poitrine.id_for_label }}">{{ form.tour_poitrine.label }}</label>
-          {{ form.tour_poitrine }}
-        </div>
-        <div class="form-field">
-          <label for="{{ form.tour_taille.id_for_label }}">{{ form.tour_taille.label }}</label>
-          {{ form.tour_taille }}
-        </div>
-        <div class="form-field">
-          <label for="{{ form.tour_hanches.id_for_label }}">{{ form.tour_hanches.label }}</label>
-          {{ form.tour_hanches }}
-        </div>
-        <div class="form-field">
-          <label for="{{ form.tour_bras.id_for_label }}">{{ form.tour_bras.label }}</label>
-          {{ form.tour_bras }}
-        </div>
-        <div class="form-field">
-          <label for="{{ form.tour_cuisse.id_for_label }}">{{ form.tour_cuisse.label }}</label>
-          {{ form.tour_cuisse }}
-        </div>
-      </div>
-
-      <div class="form-field">
-        <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
-        {{ form.notes }}
-      </div>
-
-      <div class="actions">
-        <button class="button primary" type="submit">Enregistrer</button>
-        <a class="button" href="{% url 'workouts:mensurations' %}">Annuler</a>
-      </div>
-    </form>
+    <div class="form-field" style="max-width:200px">
+      <label for="{{ form.date.id_for_label }}">Date *</label>
+      {{ form.date }}
+    </div>
   </div>
 
-  <!-- Visual guide -->
-  <div class="mensuration-guide-panel">
-    <img src="{% static 'workouts/body_guide.svg' %}" alt="Guide visuel des mesures" class="body-guide-img">
+  <!-- Balance connectée -->
+  <div class="panel">
+    <h2 style="margin-bottom:0.25rem">Balance connectée</h2>
+    <p class="muted" style="font-size:0.82rem;margin:0 0 1rem">Données issues de la balance — tous les champs sont optionnels.</p>
+
+    <div class="mensuration-form-grid">
+      <div class="form-field">
+        <label for="{{ form.poids.id_for_label }}">{{ form.poids.label }}</label>
+        {{ form.poids }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.imc.id_for_label }}">{{ form.imc.label }}</label>
+        {{ form.imc }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.age_biologique.id_for_label }}">{{ form.age_biologique.label }}</label>
+        {{ form.age_biologique }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.metabolisme_base.id_for_label }}">{{ form.metabolisme_base.label }}</label>
+        {{ form.metabolisme_base }}
+      </div>
+    </div>
+
+    <p class="muted" style="font-size:0.8rem;margin:1rem 0 0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Graisse</p>
+    <div class="mensuration-form-grid">
+      <div class="form-field">
+        <label for="{{ form.masse_grasse.id_for_label }}">{{ form.masse_grasse.label }}</label>
+        {{ form.masse_grasse }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.masse_grasse_kg.id_for_label }}">{{ form.masse_grasse_kg.label }}</label>
+        {{ form.masse_grasse_kg }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.graisse_sous_cutanee_pct.id_for_label }}">{{ form.graisse_sous_cutanee_pct.label }}</label>
+        {{ form.graisse_sous_cutanee_pct }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.graisse_viscerale.id_for_label }}">{{ form.graisse_viscerale.label }}</label>
+        {{ form.graisse_viscerale }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.masse_sans_graisse_kg.id_for_label }}">{{ form.masse_sans_graisse_kg.label }}</label>
+        {{ form.masse_sans_graisse_kg }}
+      </div>
+    </div>
+
+    <p class="muted" style="font-size:0.8rem;margin:1rem 0 0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Muscles & Os</p>
+    <div class="mensuration-form-grid">
+      <div class="form-field">
+        <label for="{{ form.masse_musculaire_kg.id_for_label }}">{{ form.masse_musculaire_kg.label }}</label>
+        {{ form.masse_musculaire_kg }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.masse_musculaire_pct.id_for_label }}">{{ form.masse_musculaire_pct.label }}</label>
+        {{ form.masse_musculaire_pct }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.muscle_squelettique_kg.id_for_label }}">{{ form.muscle_squelettique_kg.label }}</label>
+        {{ form.muscle_squelettique_kg }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.muscle_squelettique_pct.id_for_label }}">{{ form.muscle_squelettique_pct.label }}</label>
+        {{ form.muscle_squelettique_pct }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.masse_osseuse_kg.id_for_label }}">{{ form.masse_osseuse_kg.label }}</label>
+        {{ form.masse_osseuse_kg }}
+      </div>
+    </div>
+
+    <p class="muted" style="font-size:0.8rem;margin:1rem 0 0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Eau & Protéines</p>
+    <div class="mensuration-form-grid">
+      <div class="form-field">
+        <label for="{{ form.eau_corporelle_kg.id_for_label }}">{{ form.eau_corporelle_kg.label }}</label>
+        {{ form.eau_corporelle_kg }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.eau_corporelle_pct.id_for_label }}">{{ form.eau_corporelle_pct.label }}</label>
+        {{ form.eau_corporelle_pct }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.proteines_kg.id_for_label }}">{{ form.proteines_kg.label }}</label>
+        {{ form.proteines_kg }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.proteines_pct.id_for_label }}">{{ form.proteines_pct.label }}</label>
+        {{ form.proteines_pct }}
+      </div>
+    </div>
   </div>
-</div>
+
+  <!-- Mensurations manuelles -->
+  <div class="panel">
+    <h2 style="margin-bottom:0.25rem">Mensurations manuelles</h2>
+    <p class="muted" style="font-size:0.82rem;margin:0 0 1rem">Mesures au mètre ruban — tous les champs sont optionnels.</p>
+    <div class="mensuration-form-grid">
+      <div class="form-field">
+        <label for="{{ form.tour_poitrine.id_for_label }}">{{ form.tour_poitrine.label }}</label>
+        {{ form.tour_poitrine }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_taille.id_for_label }}">{{ form.tour_taille.label }}</label>
+        {{ form.tour_taille }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_hanches.id_for_label }}">{{ form.tour_hanches.label }}</label>
+        {{ form.tour_hanches }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_bras.id_for_label }}">{{ form.tour_bras.label }}</label>
+        {{ form.tour_bras }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.tour_cuisse.id_for_label }}">{{ form.tour_cuisse.label }}</label>
+        {{ form.tour_cuisse }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="panel">
+    <div class="form-field">
+      <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+      {{ form.notes }}
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="button primary" type="submit">Enregistrer</button>
+    <a class="button" href="{% url 'workouts:mensurations' %}">Annuler</a>
+  </div>
+</form>
 {% endblock %}
