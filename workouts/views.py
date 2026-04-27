@@ -437,13 +437,34 @@ def export_csv(request: HttpRequest) -> HttpResponse:
 # ── Mensurations ──────────────────────────────────────────────────────────────────
 
 _MENSURATION_CHAMPS: list[tuple[str, str, str]] = [
-    ("poids",         "Poids",    "kg"),
-    ("tour_poitrine", "Poitrine", "cm"),
-    ("tour_taille",   "Taille",   "cm"),
-    ("tour_hanches",  "Hanches",  "cm"),
-    ("tour_bras",     "Bras",     "cm"),
-    ("tour_cuisse",   "Cuisse",   "cm"),
-    ("masse_grasse",  "MG",       "%"),
+    # Général
+    ("poids",                   "Poids",            "kg"),
+    ("imc",                     "IMC",              ""),
+    # Composition corporelle
+    ("masse_grasse",            "MG",               "%"),
+    ("masse_grasse_kg",         "MG",               "kg"),
+    ("masse_sans_graisse_kg",   "Sans graisse",     "kg"),
+    ("graisse_sous_cutanee_pct","Gras s-cut.",      "%"),
+    ("graisse_viscerale",       "Graisse visc.",    ""),
+    # Muscles
+    ("masse_musculaire_kg",     "Muscles",          "kg"),
+    ("masse_musculaire_pct",    "Muscles",          "%"),
+    ("muscle_squelettique_kg",  "M. squelettique",  "kg"),
+    ("muscle_squelettique_pct", "M. squelettique",  "%"),
+    ("masse_osseuse_kg",        "Os",               "kg"),
+    # Eau & métabolisme
+    ("eau_corporelle_kg",       "Eau corp.",        "kg"),
+    ("eau_corporelle_pct",      "Eau corp.",        "%"),
+    ("proteines_kg",            "Protéines",        "kg"),
+    ("proteines_pct",           "Protéines",        "%"),
+    ("metabolisme_base",        "Métabolisme",      "kcal"),
+    ("age_biologique",          "Âge biologique",   "ans"),
+    # Mensurations manuelles
+    ("tour_poitrine",           "Poitrine",         "cm"),
+    ("tour_taille",             "Taille",           "cm"),
+    ("tour_hanches",            "Hanches",          "cm"),
+    ("tour_bras",               "Bras",             "cm"),
+    ("tour_cuisse",             "Cuisse",           "cm"),
 ]
 
 

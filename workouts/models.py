@@ -355,8 +355,57 @@ class Mensuration(models.Model):
     tour_cuisse = models.DecimalField(
         max_digits=5, decimal_places=1, null=True, blank=True, verbose_name="Tour de cuisse (cm)"
     )
+    # ── Composition corporelle — balance connectée ───────────────────────────
+    imc = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="IMC"
+    )
     masse_grasse = models.DecimalField(
-        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="% masse grasse"
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Masse grasse (%)"
+    )
+    masse_grasse_kg = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Masse grasse (kg)"
+    )
+    masse_sans_graisse_kg = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Masse sans graisse (kg)"
+    )
+    graisse_sous_cutanee_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Gras sous-cutané (%)"
+    )
+    graisse_viscerale = models.PositiveSmallIntegerField(
+        null=True, blank=True, verbose_name="Graisse viscérale (indice)"
+    )
+    masse_musculaire_kg = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Masse musculaire (kg)"
+    )
+    masse_musculaire_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Masse musculaire (%)"
+    )
+    muscle_squelettique_kg = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Muscle squelettique (kg)"
+    )
+    muscle_squelettique_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Muscle squelettique (%)"
+    )
+    masse_osseuse_kg = models.DecimalField(
+        max_digits=4, decimal_places=2, null=True, blank=True, verbose_name="Masse osseuse (kg)"
+    )
+    eau_corporelle_kg = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Eau corporelle (kg)"
+    )
+    eau_corporelle_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Eau corporelle (%)"
+    )
+    proteines_kg = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Protéines (kg)"
+    )
+    proteines_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Protéines (%)"
+    )
+    metabolisme_base = models.PositiveSmallIntegerField(
+        null=True, blank=True, verbose_name="Métabolisme de base (kcal)"
+    )
+    age_biologique = models.PositiveSmallIntegerField(
+        null=True, blank=True, verbose_name="Âge biologique (ans)"
     )
     notes = models.TextField(blank=True, verbose_name="Notes")
     created_at = models.DateTimeField(auto_now_add=True)
