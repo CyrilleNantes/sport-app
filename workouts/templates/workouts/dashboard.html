@@ -84,6 +84,10 @@
         <div class="mensuration-row">
           {% if m.poids %}<span><strong>{{ m.poids }} kg</strong><em>Poids</em></span>{% endif %}
           {% if m.masse_grasse %}<span><strong>{{ m.masse_grasse }} %</strong><em>MG</em></span>{% endif %}
+          {% if m.masse_musculaire_pct %}<span><strong>{{ m.masse_musculaire_pct }} %</strong><em>Muscles</em></span>{% endif %}
+          {% if m.graisse_viscerale %}<span><strong>{{ m.graisse_viscerale }}</strong><em>Gr. visc.</em></span>{% endif %}
+          {% if m.age_biologique %}<span><strong>{{ m.age_biologique }} ans</strong><em>Âge bio.</em></span>{% endif %}
+          {% if m.metabolisme_base %}<span><strong>{{ m.metabolisme_base }} kcal</strong><em>Métabolisme</em></span>{% endif %}
           {% if m.tour_taille %}<span><strong>{{ m.tour_taille }} cm</strong><em>Taille</em></span>{% endif %}
           {% if m.tour_hanches %}<span><strong>{{ m.tour_hanches }} cm</strong><em>Hanches</em></span>{% endif %}
           {% if m.tour_bras %}<span><strong>{{ m.tour_bras }} cm</strong><em>Bras</em></span>{% endif %}

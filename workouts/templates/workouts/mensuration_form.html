@@ -118,26 +118,32 @@
   <div class="panel">
     <h2 style="margin-bottom:0.25rem">Mensurations manuelles</h2>
     <p class="muted" style="font-size:0.82rem;margin:0 0 1rem">Mesures au mètre ruban — tous les champs sont optionnels.</p>
-    <div class="mensuration-form-grid">
-      <div class="form-field">
-        <label for="{{ form.tour_poitrine.id_for_label }}">{{ form.tour_poitrine.label }}</label>
-        {{ form.tour_poitrine }}
+    <div style="display:flex;gap:2rem;align-items:flex-start">
+      <div class="mensuration-form-grid" style="flex:1">
+        <div class="form-field">
+          <label for="{{ form.tour_poitrine.id_for_label }}">{{ form.tour_poitrine.label }}</label>
+          {{ form.tour_poitrine }}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.tour_taille.id_for_label }}">{{ form.tour_taille.label }}</label>
+          {{ form.tour_taille }}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.tour_hanches.id_for_label }}">{{ form.tour_hanches.label }}</label>
+          {{ form.tour_hanches }}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.tour_bras.id_for_label }}">{{ form.tour_bras.label }}</label>
+          {{ form.tour_bras }}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.tour_cuisse.id_for_label }}">{{ form.tour_cuisse.label }}</label>
+          {{ form.tour_cuisse }}
+        </div>
       </div>
-      <div class="form-field">
-        <label for="{{ form.tour_taille.id_for_label }}">{{ form.tour_taille.label }}</label>
-        {{ form.tour_taille }}
-      </div>
-      <div class="form-field">
-        <label for="{{ form.tour_hanches.id_for_label }}">{{ form.tour_hanches.label }}</label>
-        {{ form.tour_hanches }}
-      </div>
-      <div class="form-field">
-        <label for="{{ form.tour_bras.id_for_label }}">{{ form.tour_bras.label }}</label>
-        {{ form.tour_bras }}
-      </div>
-      <div class="form-field">
-        <label for="{{ form.tour_cuisse.id_for_label }}">{{ form.tour_cuisse.label }}</label>
-        {{ form.tour_cuisse }}
+      <div style="flex-shrink:0;width:160px;display:flex;align-items:center;justify-content:center">
+        {% load static %}
+        <img src="{% static 'workouts/body_guide.svg' %}" alt="Guide visuel des mesures" style="width:140px;opacity:0.75">
       </div>
     </div>
   </div>
