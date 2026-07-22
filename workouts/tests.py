@@ -1,8 +1,14 @@
+import io
+import json
+import zipfile
+
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
 
 from .forms import SessionLigneQuickForm
-from .models import Exercice, Seance, SeanceType, SessionLigne, TemplateLigne
+from .models import Exercice, Mensuration, Seance, SeanceType, SessionLigne, TemplateLigne
 from .services import (
     add_unplanned_session_line,
     copy_template_lines_to_seance,
@@ -212,3 +218,93 @@ class SeanceTemplateCopyTests(TestCase):
         self.assertEqual(added_line.numero_serie, 2)
         self.assertEqual(added_line.ordre_prevu, 2)
         self.assertEqual(added_line.ordre_reel, 2)
+
+
+class BackupRoundtripTests(TestCase):
+    """L'ID des users ne correspond pas forcément d'un environnement à l'autre
+    (ex. Railway vs VPS) : l'import doit remapper via le username, pas le pk,
+    et ne jamais transporter ni s'appuyer sur le mot de passe."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.parent = User.objects.create_user(username="parent", password="x")
+        self.kid = User.objects.create_user(username="kid", password="x")
+        self.seance_type_parent = SeanceType.objects.create(
+            user=self.parent, nom="Push"
+        )
+        self.seance_type_kid = SeanceType.objects.create(user=self.kid, nom="Legs")
+        Mensuration.objects.create(
+            user=self.parent, date=timezone.localdate(), poids=80
+        )
+
+    def test_export_never_includes_password(self):
+        self.client.force_login(self.parent)
+        response = self.client.get("/backup/export/")
+
+        self.assertEqual(response.status_code, 200)
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+            self.assertIn("users.json", zf.namelist())
+            users_data = json.loads(zf.read("users.json").decode())
+            usernames = {u["username"] for u in users_data}
+            self.assertEqual(usernames, {"parent", "kid"})
+            for entry in users_data:
+                self.assertEqual(set(entry.keys()), {"pk", "username"})
+
+    def test_import_remaps_users_by_username_not_pk(self):
+        self.client.force_login(self.parent)
+        export_response = self.client.get("/backup/export/")
+        zip_bytes = export_response.content
+
+        # Simule un environnement différent : mêmes usernames, IDs différents.
+        SeanceType.objects.all().delete()
+        Mensuration.objects.all().delete()
+        old_parent_pk, old_kid_pk = self.parent.pk, self.kid.pk
+        self.parent.delete()
+        self.kid.delete()
+
+        User = get_user_model()
+        # Décale les auto-increments pour garantir des pks différents du backup.
+        shifted = User.objects.create_user(username="shifted_out")
+        new_parent = User.objects.create_user(username="parent", password="local-pass")
+        new_kid = User.objects.create_user(username="kid", password="local-pass")
+        self.assertNotEqual(new_parent.pk, old_parent_pk)
+        self.assertNotEqual(new_kid.pk, old_kid_pk)
+
+        self.client.force_login(new_parent)
+        upload = SimpleUploadedFile(
+            "backup.zip", zip_bytes, content_type="application/zip"
+        )
+        response = self.client.post("/backup/import/", {"backup_file": upload})
+        self.assertEqual(response.status_code, 302)
+
+        seance_type_parent = SeanceType.objects.get(nom="Push")
+        seance_type_kid = SeanceType.objects.get(nom="Legs")
+        self.assertEqual(seance_type_parent.user_id, new_parent.pk)
+        self.assertEqual(seance_type_kid.user_id, new_kid.pk)
+
+        # Les mots de passe locaux existants ne doivent jamais être écrasés
+        # par l'import (aucun mot de passe n'est même présent dans le backup).
+        new_parent.refresh_from_db()
+        self.assertTrue(new_parent.check_password("local-pass"))
+
+    def test_import_creates_missing_user_without_usable_password(self):
+        self.client.force_login(self.parent)
+        export_response = self.client.get("/backup/export/")
+        zip_bytes = export_response.content
+
+        SeanceType.objects.all().delete()
+        Mensuration.objects.all().delete()
+        self.kid.delete()  # "kid" n'existe pas encore dans ce nouvel environnement
+
+        upload = SimpleUploadedFile(
+            "backup.zip", zip_bytes, content_type="application/zip"
+        )
+        response = self.client.post("/backup/import/", {"backup_file": upload})
+        self.assertEqual(response.status_code, 302)
+
+        User = get_user_model()
+        created_kid = User.objects.get(username="kid")
+        self.assertFalse(created_kid.has_usable_password())
+        self.assertEqual(
+            SeanceType.objects.get(nom="Legs").user_id, created_kid.pk
+        )

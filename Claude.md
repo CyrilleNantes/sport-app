@@ -180,6 +180,8 @@ Après chaque implémentation validée, l'IA DOIT mettre à jour `spec.md` :
 - `select_related` et `prefetch_related` systématiques pour éviter les requêtes N+1
 - Sauvegarde partielle via `update_fields` quand seuls certains champs changent
 - Logging : logger nommé par app, niveau `DEBUG` en dev, `INFO` en prod
+- Ne jamais exécuter tel quel le SQL généré par une commande de management pensée pour la CLI (ex. `sqlsequencereset`) à l'intérieur d'une transaction déjà ouverte (`transaction.atomic`) : ce SQL embarque souvent ses propres `BEGIN;`/`COMMIT;`, qui clôturent prématurément la transaction en cours et cassent la gestion des savepoints — filtrer ces lignes avant `cursor.execute()`
+- Ne jamais remapper une FK vers un `User` par son ID brut lors d'un import/restore inter-environnements (les ID ne correspondent pas forcément d'un environnement à l'autre) : remapper par un identifiant stable (ex. `username`), sans jamais transporter ni écraser un mot de passe existant
 
 ### Nommage
 - Modèles : `PascalCase` (français ou anglais selon le domaine)

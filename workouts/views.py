@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
 import zipfile
 from datetime import date
@@ -537,6 +538,11 @@ _BACKUP_MODELS: list[tuple[str, type]] = [
     ("session_lignes",  SessionLigne),
 ]
 
+# Modèles du backup portant un champ "user" direct : leur FK doit être remappée
+# à l'import via le username (jamais via l'ID, qui ne correspond pas forcément
+# d'un environnement à l'autre), pour rester correct si l'appli devient multi-utilisateurs.
+_BACKUP_USER_MODELS: tuple[type, ...] = (SeanceType, Mensuration, Seance)
+
 
 @login_required
 def backup_page(request: HttpRequest) -> HttpResponse:
@@ -545,11 +551,24 @@ def backup_page(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def export_backup(request: HttpRequest) -> HttpResponse:
+    User = get_user_model()
+    user_ids: set[int] = set()
+    for model in _BACKUP_USER_MODELS:
+        user_ids.update(model.objects.values_list("user_id", flat=True).distinct())
+
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for name, model in _BACKUP_MODELS:
             data = django_serializers.serialize("json", model.objects.all(), indent=2)
             zf.writestr(f"{name}.json", data)
+
+        # Uniquement pk + username (jamais le mot de passe) : sert à remapper
+        # les FK "user" à l'import sans dépendre des IDs, ni transporter de hash.
+        users_data = [
+            {"pk": u.pk, "username": u.username}
+            for u in User.objects.filter(pk__in=user_ids).only("pk", "username")
+        ]
+        zf.writestr("users.json", json.dumps(users_data, indent=2))
 
     buffer.seek(0)
     filename = f"sport_backup_{date.today().isoformat()}.zip"
@@ -616,6 +635,8 @@ def import_backup(request: HttpRequest) -> HttpResponse:
         messages.error(request, "Le fichier n'est pas un zip valide.")
         return redirect("workouts:backup_page")
 
+    User = get_user_model()
+
     try:
         with transaction.atomic():
             for name, model in reversed(_BACKUP_MODELS):
@@ -624,12 +645,37 @@ def import_backup(request: HttpRequest) -> HttpResponse:
             zip_file.seek(0)
             with zipfile.ZipFile(zip_file) as zf:
                 available = zf.namelist()
-                for name, _model in _BACKUP_MODELS:
+
+                # Remappe les FK "user" du backup par username plutôt que par ID :
+                # les ID ne correspondent pas forcément d'un environnement à l'autre
+                # (ex. Railway vs VPS), et ça reste correct si l'appli devient
+                # multi-utilisateurs. Le mot de passe local n'est jamais touché.
+                user_id_map: dict[int, int] = {}
+                if "users.json" in available:
+                    users_data = json.loads(zf.read("users.json").decode("utf-8"))
+                    for entry in users_data:
+                        local_user, created = User.objects.get_or_create(
+                            username=entry["username"],
+                        )
+                        if created:
+                            local_user.set_unusable_password()
+                            local_user.save(update_fields=["password"])
+                        user_id_map[entry["pk"]] = local_user.pk
+
+                for name, model in _BACKUP_MODELS:
                     filename = f"{name}.json"
                     if filename not in available:
                         logger.warning("Fichier manquant dans le zip : %s", filename)
                         continue
                     data = zf.read(filename).decode("utf-8")
+
+                    if model in _BACKUP_USER_MODELS:
+                        rows = json.loads(data)
+                        for row in rows:
+                            old_uid = row["fields"].get("user")
+                            row["fields"]["user"] = user_id_map.get(old_uid, request.user.pk)
+                        data = json.dumps(rows)
+
                     for obj in django_serializers.deserialize("json", data):
                         obj.save()
 
@@ -638,8 +684,16 @@ def import_backup(request: HttpRequest) -> HttpResponse:
             call_command("sqlsequencereset", "workouts", stdout=buf, no_color=True)
             sql = buf.getvalue()
             if sql:
-                with connection.cursor() as cursor:
-                    cursor.execute(sql)
+                # sqlsequencereset entoure sa sortie de BEGIN;/COMMIT; (pensés pour
+                # un collage dans psql) : les exécuter ici clôturerait prématurément
+                # la transaction atomic() déjà ouverte. On ne garde que les instructions.
+                statements = [
+                    line for line in sql.splitlines()
+                    if line.strip() and line.strip().upper() not in ("BEGIN;", "COMMIT;")
+                ]
+                if statements:
+                    with connection.cursor() as cursor:
+                        cursor.execute("\n".join(statements))
 
         logger.info("Backup importé avec succès")
         messages.success(request, "Import réussi — toutes les données ont été restaurées.")
