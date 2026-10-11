@@ -277,8 +277,10 @@ Le bandeau "Dernières mensurations" du dashboard affiche conditionnellement : p
 
 ### 5.13 Backup & Restore (`/backup/`)
 
-- **Export ZIP** : archive de toutes les données en JSON (un fichier par modèle)
+- **Export ZIP** : archive de toutes les données en JSON (un fichier par modèle) + `users.json` (uniquement `pk` et `username` des utilisateurs référencés par `SeanceType`, `Mensuration`, `Seance` — jamais le mot de passe)
 - **Import ZIP** : restauration complète atomique — suppression de toutes les données existantes, réimport, resynchronisation des IDs. Rollback complet si erreur. Confirmation via `<dialog>` natif avant soumission.
+  - Les FK `user` sont remappées par **username** via `users.json`, jamais par ID brut : les ID ne correspondent pas forcément d'un environnement à l'autre (ex. restauration d'un backup Railway sur le VPS). Si l'utilisateur du backup n'existe pas encore localement, il est créé avec un mot de passe **inutilisable** (jamais de hash importé) — pensé pour permettre un jour d'ouvrir l'appli à plusieurs comptes (ex. enfants) sans que l'import ne mélange ou n'écrase des mots de passe.
+  - Backward-compat : un ancien backup sans `users.json` rattache toutes les données importées à l'utilisateur qui effectue l'import.
 - **Export CSV lisible** : séances terminées uniquement, séparateur `;`, compatible Excel (BOM UTF-8)
 
 ---
