@@ -16,6 +16,7 @@ from django.core.management import call_command
 from django.db import connection, transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import (
@@ -181,7 +182,9 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         user=user, statut=StatutSeance.IN_PROGRESS
     ).select_related("seance_type")
     prochaines = (
-        Seance.objects.filter(user=user, statut=StatutSeance.PLANNED)
+        Seance.objects.filter(
+            user=user, statut=StatutSeance.PLANNED, date__gte=timezone.localdate()
+        )
         .select_related("seance_type")
         .order_by("date", "id")[:6]
     )

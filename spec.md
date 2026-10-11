@@ -1,7 +1,7 @@
 # Spécifications Fonctionnelles — Sport App
 
 > Document vivant — mis à jour par l'IA après chaque implémentation validée.
-> Dernière mise à jour : 2026-04-26
+> Dernière mise à jour : 2026-10-11
 
 ---
 
@@ -204,7 +204,7 @@ Formulaire : nom + description du gabarit, puis tableau de lignes (formset inlin
 Page d'accueil. Présente en un coup d'œil :
 
 - **En cours** : séances démarrées non terminées, avec lien vers le détail
-- **Planifiées** : 6 prochaines séances avec leur date relative
+- **Planifiées** : 6 prochaines séances (date ≥ aujourd'hui) avec leur date relative — les séances planifiées dont la date est passée ne sont plus affichées ici
 - **Dernières séances** : 6 dernières séances terminées avec leur durée
 - **Graphe de progression** : courbe d'évolution pour l'exercice et l'indicateur sélectionnés (Tonnage ou 1RM estimé). Pré-sélectionné sur "Hip Thrust barre" / Tonnage au chargement. Ligne PR en bleu ciel pointillé.
 - **Dernières mensurations** : 2 derniers relevés avec les valeurs principales

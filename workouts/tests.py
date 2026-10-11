@@ -1,10 +1,11 @@
 import io
+from datetime import timedelta
 import json
 import zipfile
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from .forms import SessionLigneQuickForm
@@ -308,3 +309,31 @@ class BackupRoundtripTests(TestCase):
         self.assertEqual(
             SeanceType.objects.get(nom="Legs").user_id, created_kid.pk
         )
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class DashboardProchainesTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="cyrille", password="x")
+        self.template = SeanceType.objects.create(user=self.user, nom="Seance A")
+        self.client.force_login(self.user)
+
+    def test_prochaines_exclut_les_seances_planifiees_passees(self):
+        today = timezone.localdate()
+        passee = Seance.objects.create(
+            user=self.user, seance_type=self.template, date=today - timedelta(days=30)
+        )
+        du_jour = Seance.objects.create(user=self.user, seance_type=self.template, date=today)
+        future = Seance.objects.create(
+            user=self.user, seance_type=self.template, date=today + timedelta(days=3)
+        )
+
+        response = self.client.get("/")
+
+        self.assertEqual(list(response.context["prochaines"]), [du_jour, future])
+        self.assertNotIn(passee, response.context["prochaines"])
