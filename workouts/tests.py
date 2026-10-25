@@ -22,7 +22,8 @@ class SeanceTemplateCopyTests(TestCase):
     def setUp(self):
         self.hip_thrust = Exercice.objects.create(nom="Hip Thrust barre")
         self.leg_curl = Exercice.objects.create(nom="Leg Curl")
-        self.template = SeanceType.objects.create(nom="Seance A")
+        self.user = get_user_model().objects.create_user(username="cyrille", password="x")
+        self.template = SeanceType.objects.create(user=self.user, nom="Seance A")
         TemplateLigne.objects.create(
             seance_type=self.template,
             ordre_exercice=1,
@@ -49,6 +50,7 @@ class SeanceTemplateCopyTests(TestCase):
         seance = create_seance_from_template(
             seance_type=self.template,
             date=timezone.localdate(),
+            user=self.user,
         )
 
         lignes = list(seance.lignes.order_by("ordre_prevu", "numero_serie"))
@@ -100,6 +102,7 @@ class SeanceTemplateCopyTests(TestCase):
         seance = create_seance_from_template(
             seance_type=self.template,
             date=timezone.localdate(),
+            user=self.user,
         )
         ligne = seance.lignes.order_by("ordre_prevu").first()
 
@@ -120,6 +123,7 @@ class SeanceTemplateCopyTests(TestCase):
         seance = create_seance_from_template(
             seance_type=self.template,
             date=timezone.localdate(),
+            user=self.user,
         )
         ligne = seance.lignes.order_by("ordre_prevu").first()
         ligne.mark_completed()
@@ -134,6 +138,7 @@ class SeanceTemplateCopyTests(TestCase):
         seance = create_seance_from_template(
             seance_type=self.template,
             date=timezone.localdate(),
+            user=self.user,
         )
         SessionLigne.objects.create(
             seance=seance,
@@ -171,6 +176,7 @@ class SeanceTemplateCopyTests(TestCase):
         seance = create_seance_from_template(
             seance_type=self.template,
             date=timezone.localdate(),
+            user=self.user,
         )
 
         update_exercise_order(seance=seance, ordre_prevu=2, ordre_reel=1)
@@ -203,6 +209,7 @@ class SeanceTemplateCopyTests(TestCase):
         seance = create_seance_from_template(
             seance_type=self.template,
             date=timezone.localdate(),
+            user=self.user,
         )
 
         added_line = add_unplanned_session_line(
